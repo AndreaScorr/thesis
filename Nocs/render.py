@@ -118,7 +118,10 @@ bproc.python.renderer.RendererUtility.set_world_background([0.5, 0.5, 0.5])
 
 #render of the scene
 data = bproc.renderer.render()
-
+cam_K =         np.array([[1066.778, 0.0,      312.9869079589844],
+                          [0.0,      1067.487, 241.3108977675438],
+                          [0.0,      0.0,      1.0]])
+bproc.camera.set_intrinsics_from_K_matrix(cam_K, 512, 512)
 #get the path for the output folder
 output_subfolder = obj_path.split("/")[-1]
 print(output_subfolder)

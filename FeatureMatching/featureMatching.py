@@ -91,7 +91,7 @@ torch.cuda.empty_cache()
 
 class Dinov2Matcher:
 
-  def __init__(self, repo_name="facebookresearch/dinov2", model_name="dinov2_vitb14", smaller_edge_size=900, half_precision=False, device="cuda"):
+  def __init__(self, repo_name="facebookresearch/dinov2", model_name="dinov2_vitg14", smaller_edge_size=800, half_precision=False, device="cuda"):
     self.repo_name = repo_name
     self.model_name = model_name
     self.smaller_edge_size = smaller_edge_size
@@ -215,13 +215,14 @@ def feature_matching(image1_path, mask1_path, image2_path, mask2_path):
 
   #print(f'shape image2: {image2.shape}')
   # Build knn using features from image1, and query all features from image2
-  knn = NearestNeighbors(n_neighbors=1,algorithm='auto', metric='euclidean')
+  knn = NearestNeighbors(n_neighbors=1,algorithm='auto', metric='cosine')
   knn.fit(features1)
   distances, match2to1 = knn.kneighbors(features2)
   match2to1 = np.array(match2to1)
   #print(f'features:{len(match2to1)}')
-  plt.plot(sorted(distances.flatten()))
+  #plt.plot(sorted(distances.flatten()))
   #plt.show()
+
 
   #print("match 2to1",len(match2to1))
 
@@ -274,14 +275,24 @@ def feature_matching(image1_path, mask1_path, image2_path, mask2_path):
   random.seed(42)
   cv2.setRNGSeed(42)  # Solo se vuoi forzare anche il generatore interno di OpenCV
   # Applichiamo RANSAC per trovare l'omografia
+
+  best_H = None
+  best_inliers = 0
+  for t in [1.0, 3.0, 5.0, 7.0, 9.0, 12.0]:
+      H, mask = cv2.findHomography(points1, points2, cv2.RANSAC, ransacReprojThreshold=t)
+      inliers = np.sum(mask)
+      print(f"Threshold: {t}, Inliers: {inliers}")
+      if inliers > best_inliers:
+          best_inliers = inliers
+          best_H = H
   H, mask = cv2.findHomography(points1, points2, cv2.RANSAC, ransacReprojThreshold=9.0)
 
   # La maschera contiene 1 per gli inliers e 0 per gli outliers
-  inliers = mask.ravel() == 1
+  best_inliers = mask.ravel() == 1
 
   # Filtriamo i punti di corrispondenza validi (inliers)
-  valid_points1 = points1[inliers]
-  valid_points2 = points2[inliers]
+  valid_points1 = points1[best_inliers]
+  valid_points2 = points2[best_inliers]
 
   # Creiamo il grafico per visualizzare le corrispondenze valide
   fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
@@ -297,7 +308,7 @@ def feature_matching(image1_path, mask1_path, image2_path, mask2_path):
 
   #plt.show()
   
-  return points1,points2,image1.shape,image2.shape,H
+  return valid_points1,valid_points2,image1.shape,image2.shape,H
 
 def find_nearest_non_black_white(img, x, y, max_search_radius=10):
     """
@@ -329,6 +340,8 @@ config = load_config(args.config)
 image1_path = config["image_path"] #real_image
 text_prompt= config["text_prompt"]
 mask1_path = config["mask_path"]+"/"+text_prompt+"_"+image1_path.split("/")[-1]
+
+#image1_path_seg = "/home/andrea/Desktop/Thesis_project/Segmented/rgb/cup_000547.jpg"  
 ##print(mask1_path)
 
 
@@ -346,7 +359,7 @@ masks_path= config["blender_render_mask_path"]
 ##print(mask1_path)
 #img1_pixel_matches,img2_pixel_matches,shape1,shape2=feature_matching(image1_path,mask1_path,image2_path,mask2_path)
 
-i=1
+i=2
 image2_path = os.path.join(images2_path, f"{str(i).zfill(6)}{assets_data_type}")
 #print(f'image2_path : {image2_path}')
 mask2_path = os.path.join(masks_path, f"{str(i).zfill(6)}{assets_data_type}")
@@ -368,6 +381,7 @@ image_nocs_path = os.path.join(nocs_path, f"{str(i).zfill(6)}{assets_data_type}"
 #print(f'image_nocs path: {image_nocs_path}')
 img_nocs =cv2.imread(image_nocs_path,cv2.IMREAD_COLOR_RGB)
 plt.figure(0)
+
   
 #print(img2_pixel_matches)
 features3Dpoint =[]
@@ -383,7 +397,7 @@ for x,y in img2_pixel_matches:
     features3Dpoint.append(tuple(map(int, new_color))) #use the color of the match pixel
 
     ##print(f'posizione {x1,y1} colore: {img_nocs[y1,x1]}')
-    img_nocs[y1,x1]=(0,255,0) #paint the pixel of the match
+    img_nocs[y1,x1]=(255,0,0) #paint the pixel of the match
 
 plt.imshow(img_nocs)
 #print(image_nocs_path)

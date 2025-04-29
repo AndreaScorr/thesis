@@ -148,7 +148,10 @@ faces_save = blender
 # Create a new object with the mesh
 blender_object = bpy.data.objects.new(name="TrimeshObject", object_data=blender_mesh)
 bpy.context.collection.objects.link(blender_object)
-
+cam_K =         np.array([[1066.778, 0.0,      312.9869079589844],
+                          [0.0,      1067.487, 241.3108977675438],
+                          [0.0,      0.0,      1.0]])
+bproc.camera.set_intrinsics_from_K_matrix(cam_K, 512, 512)
 
 
 # Ensure the mesh is a single-user copy
@@ -214,7 +217,7 @@ def spherical_coords(num_views, radius=2, theta_range=(0, np.pi / 2)):
 
 # Calculate camera positions
 #camera_positions = spherical_coords(num_views, radius=2, theta_range=(0, np.pi / 2))
-camera_positions = spherical_coords(num_views, radius=350, theta_range=(0, np.pi / 2))
+camera_positions = spherical_coords(num_views, radius=600, theta_range=(0, np.pi / 2))
 #camera_positions = spherical_coords(num_views, radius=1500, theta_range=(0, np.pi / 2))
 #print(camera_positions)
 can2world_matrix_array =[]
