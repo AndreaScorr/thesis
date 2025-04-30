@@ -151,7 +151,7 @@ bpy.context.collection.objects.link(blender_object)
 cam_K =         np.array([[1066.778, 0.0,      312.9869079589844],
                           [0.0,      1067.487, 241.3108977675438],
                           [0.0,      0.0,      1.0]])
-bproc.camera.set_intrinsics_from_K_matrix(cam_K, 512, 512)
+#bproc.camera.set_intrinsics_from_K_matrix(cam_K, 512, 512)
 
 
 # Ensure the mesh is a single-user copy

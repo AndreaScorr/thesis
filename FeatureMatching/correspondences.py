@@ -16,6 +16,8 @@ import yaml
 import remapping_to_3D as r3D
 from lang_sam import LangSAM
 import ImageUtils as img_utils
+import json_utils as js
+
 
 def load_config(config_path):
     with open(config_path, 'r') as f:
@@ -35,9 +37,9 @@ def update_config(config_path, updates):
 
 
 
-def find_correspondences(image_path1: str, image_path2: str, num_pairs: int = 10, load_size: int = 224, layer: int = 9,
+def find_correspondences(image_path1: str, image_path2: str, num_pairs: int = 10, load_size: int = 224, layer: int = 8,
                          facet: str = 'token', bin: bool = True, thresh: float = 0.20, model_type: str = 'dino_vits8',
-                         stride: int = 2) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]],
+                         stride: int = 4) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]],
                                                                               Image.Image, Image.Image]:
     """
     finding point correspondences between two images.
@@ -198,7 +200,7 @@ def segmentation(image_pil ,text_prompt):
     image_np = np.array(image_pil)  # (H, W, 3)
     mask_np = np.array(mask).astype(np.uint8).squeeze()  # (H, W)
     mask_np = (mask_np > 0).astype(np.uint8) * 255  # adesso è 0 o 255
-
+    ''''''
     # Fix maschera se necessario
     if mask_np.ndim == 3:
         if mask_np.shape[2] == 3:
@@ -210,27 +212,9 @@ def segmentation(image_pil ,text_prompt):
     #plt.imshow(mask_np,cmap="gray")
 
     '''
-    # apply mask
-    segmented_np = image_np * mask_np[:, :, None]  # Moltiplica per la maschera
-    
-    # trova bounding box
-    y_indices, x_indices = np.where(mask_np == 1)
-    if y_indices.size == 0 or x_indices.size == 0:
-        return None  # Nessuna maschera trovata
-
-    x_min, x_max = x_indices.min(), x_indices.max()
-    y_min, y_max = y_indices.min(), y_indices.max()
-
-    x_left = x_min
-    y_top = y_min
-    width = x_max - x_min + 1
-    height = y_max - y_min + 1
-
-    bbox = (x_left, y_top, width, height)
-    
-    #draw = ImageDraw.Draw(image_pil)
-    #draw.rectangle(bbox, outline="red", width=3)
+    apply mask
     '''
+
     #torch.cuda.empty_cache()
     return mask_np
 
@@ -296,6 +280,12 @@ if __name__ == "__main__":
 
         
         image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000547.jpg"
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000019.jpg"
+        
+        image_id =  image_path1.split("/")[-1].removesuffix(".jpg").replace("0","")
+        #print("image_id:",image_id)
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000305.jpg"
+        
         image_path2 = "blender_render/obj_000014.ply/000001.png"
         
 
@@ -308,7 +298,6 @@ if __name__ == "__main__":
 
         
 
-        print(mask.dtype)
         bbox = get_bounding_box_from_mask(mask)
 
         img_crop, y_offset, x_offset = img_utils.make_quadratic_crop(np.array(image1_pil), bbox)
@@ -320,13 +309,13 @@ if __name__ == "__main__":
         mask_crop =mask_crop[:,:,0]
         mask_crop = (mask_crop > 0).astype(np.uint8) * 255  # adesso è 0 o 255
 
-        print("mask crop", mask_crop.shape)
+        #print("mask crop", mask_crop.shape)
 
 
 
         img_crop = cv2.bitwise_and(img_crop, img_crop, mask=mask_crop)
         
-        print("imgcrop size:",img_crop.shape)
+        #print("imgcrop size:",img_crop.shape)
         plt.figure(3)
         plt.imshow(img_crop)
         
@@ -363,7 +352,7 @@ if __name__ == "__main__":
         #img_nocs = cv2.resize(img_nocs, (image2_pil.shape[0], image2_pil.shape[1]))
         img_nocs = cv2.resize(img_nocs, image2_pil.size)
         
-        print("image_nocs" ,img_nocs.shape)
+        #print("image_nocs" ,img_nocs.shape)
         
 
         assets_data_type= ".png"
@@ -417,18 +406,33 @@ if __name__ == "__main__":
 
         r3D.generate_pointCloud(mesh,feature_point_tuple)
 
-        cam_K = np.array([[1066.778, 0.0,      312.9869079589844],
-                          [0.0,      1067.487, 241.3108977675438],
-                          [0.0,      0.0,      1.0]])
+        print(image1_pil_show.size)
+        print(image1_pil.size)
         
+        target_size = (image1_pil.size[1],image1_pil.size[0]) 
+        fx = 1066.778
+        fy = 1067.487
+        cx = 312.9869079589844
+        cy = 241.3108977675438
+
+        _,intrinsic=img_utils.input_resize(image1_pil_show,image1_pil.size,intrinsics=[fx, fy, cx, cy])
+        print("instrinsic:",intrinsic)
+        #clfx,fy,cx,cy=intrinsic
+        #fx,fy,cx,cy=intrinsic
+        cam_K = np.array([[fx,        0,      cx],
+                          [0.0,       fy,     cy],
+                          [0.0,       0.0,    1.0]])
+        
+        print("new CAm",cam_K)
         object_points_3D = np.array(features_nocs_to_mesh, dtype=np.float32)
         image_points_2D = np.array(points1, dtype=np.float32)
         
 
+
         #success,rvec,tvec=cv2.solvePnP(object_points_3D, image_points_2D, cam_K, distCoeffs=None)
         dist_coeffs = np.ones((5, 1)) *0
 
-        retval, rvec, tvec, inliers = cv2.solvePnPRansac(object_points_3D, image_points_2D, cam_K,distCoeffs=dist_coeffs, iterationsCount=100, reprojectionError=8.0)
+        retval, rvec, tvec, inliers = cv2.solvePnPRansac(object_points_3D, image_points_2D, cam_K,distCoeffs=dist_coeffs, iterationsCount=200, reprojectionError=9.0)
         
         
         R, _ = cv2.Rodrigues(rvec)
@@ -441,9 +445,14 @@ if __name__ == "__main__":
         print("distance ^2: ", distance)
         print("R:",R)
         print("t:",tvec)
+        
+        json_gt="/home/andrea/Downloads/ycbv_train_pbr/train_pbr/000049/scene_gt.json"
+        gt_R,gt_T=js.estrai_parametri(imgId=image_id,json_path=json_gt,target_obj_id=14)
+        print("GtR:",gt_R)
+        print("GtT:",gt_T)
 
-        
-        
+        rvec_gt,_=cv2.Rodrigues(gt_R)
+        tvec_gt = gt_T
         img_utils.draw_projected_3d_bbox(
         image=image1_pil_show,
         obj_id="14",

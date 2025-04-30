@@ -287,3 +287,28 @@ def draw_projected_3d_bbox(image, obj_id, rvec, tvec, camera_matrix, dist_coeffs
     plt.title(f"3D Bounding Box Projection - Object {obj_id}")
     plt.axis("off")
     plt.show()
+
+
+
+def input_resize(image, target_size, intrinsics):
+    # image: [y, x, c] expected row major
+    # target_size: [y, x] expected row major
+    # instrinsics: [fx, fy, cx, cy]
+
+    intrinsics = np.asarray(intrinsics)
+    x_size, y_size = image.size
+
+    if (y_size / x_size) < (target_size[0] / target_size[1]):
+        resize_scale = target_size[0] / y_size
+        crop = int((x_size - (target_size[1] / resize_scale)) * 0.5)
+        #image = image[:, crop:(x_size-crop), :]
+        #image = cv2.resize(image, (int(target_size[1]), int(target_size[0])))
+        intrinsics = intrinsics * resize_scale
+    else:
+        resize_scale = target_size[1] / x_size
+        crop = int((y_size - (target_size[0] / resize_scale)) * 0.5)
+        #image = image[crop:(y_size-crop), :, :]
+        #image = cv2.resize(image, (int(target_size[1]), int(target_size[0])))
+        intrinsics = intrinsics * resize_scale
+
+    return image, intrinsics

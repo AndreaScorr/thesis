@@ -359,7 +359,7 @@ masks_path= config["blender_render_mask_path"]
 ##print(mask1_path)
 #img1_pixel_matches,img2_pixel_matches,shape1,shape2=feature_matching(image1_path,mask1_path,image2_path,mask2_path)
 
-i=2
+i=1
 image2_path = os.path.join(images2_path, f"{str(i).zfill(6)}{assets_data_type}")
 #print(f'image2_path : {image2_path}')
 mask2_path = os.path.join(masks_path, f"{str(i).zfill(6)}{assets_data_type}")
@@ -523,16 +523,17 @@ R = np.array([
     [ 0.13328858,  0.40360898, -0.90517068],
     [ 0.07265951, -0.91484171, -0.39722192]
 ])
-#tvec = np.array([94.04884338, -50.48897934, 572.37988281])
+tvec = np.array([94.04884338, -50.48897934, 572.37988281])
 
 
+'''
 #ground truth banana
 R = np.array([[-0.00015016013639979064, 0.4626128077507019, 0.8865604996681213],
               [0.622158944606781, 0.6941233277320862, -0.36209261417388916], 
               [-0.782891035079956, 0.5515271425247192, -0.2879229187965393]
 ]) 
 #tvec = np.array([-112.10218811035156, 16.280380249023438, 627.1389770507812])
-
+'''
 
 
 '''
@@ -544,7 +545,7 @@ R = np.array([
 '''
 #tvec = np.array([-18.96696091, -60.08344269, 825.09411621], dtype=np.float32)
 
-#rvec, _ = cv2.Rodrigues(R)
+rvec, _ = cv2.Rodrigues(R)
 
 
 # Bounding box 3D nell'object frame (NOCS normalizzato in [0,1])
