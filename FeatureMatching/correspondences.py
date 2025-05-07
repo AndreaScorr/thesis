@@ -76,6 +76,8 @@ def find_correspondences(image_path1: str, image_path2: str, num_pairs: int = 10
 
     # calculate similarity between image1 and image2 descriptors
     similarities = chunk_cosine_sim(descriptors1, descriptors2)
+    print("size num_patches1:",(num_patches1))
+    print("size num_patches2:",(num_patches2))
 
     # calculate best buddies
     image_idxs = torch.arange(num_patches1[0] * num_patches1[1], device=device)
@@ -193,7 +195,7 @@ def segmentation(image_pil ,text_prompt):
     results = model.predict([image_pil], [text_prompt])
 
     #extract the mask
-    mask = results[0]["masks"]
+    mask = results[0]["masks"][0]
 
 
     # Convert to numpy array
@@ -279,30 +281,50 @@ if __name__ == "__main__":
         #save_dir.mkdir(exist_ok=True, parents=True)
 
         
-        image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000547.jpg"
-        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000019.jpg"
+        image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000201.jpg" #works well
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000547.jpg" #works well
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000132.jpg"  
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000440.jpg"  
+
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000106.jpg"
         
-        image_id =  image_path1.split("/")[-1].removesuffix(".jpg").replace("0","")
+        image_id =  image_path1.split("/")[-1].removesuffix(".jpg")
+        image_id = int(image_id)
+
         #print("image_id:",image_id)
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000305.jpg"
         
-        image_path2 = "blender_render/obj_000014.ply/000001.png"
-        
+        image_path2 = "blender_render/obj_000014.ply/000005.png"
+        i=(int)(image_path2.split("/")[-1].removesuffix(".png"))
+
+        #image_path2 = "blender_render/obj_000005.ply/000002.png"
+
 
         image1_pil =Image.open(image_path1).convert('RGB')
         image1_pil_show = Image.open(image_path1)
         plt.figure(2)
         plt.imshow(image1_pil)
         plt.show()
+        print(config["text_prompt"])
         mask = segmentation(image1_pil,config["text_prompt"])
 
         
 
         bbox = get_bounding_box_from_mask(mask)
 
+        print("image1_pil prima crop:",image1_pil.size)
+
+        
+
+
         img_crop, y_offset, x_offset = img_utils.make_quadratic_crop(np.array(image1_pil), bbox)
 
         print("imgcrop",img_crop.shape)
+        
+        
+
+   
+
         print("y_offset:" ,y_offset)
         print("x_offset:",x_offset)
         mask_crop,_,_ = img_utils.make_quadratic_crop(mask, bbox)
@@ -326,7 +348,20 @@ if __name__ == "__main__":
         cv2.imwrite(image_path1,img_crop)
 
         points1, points2, image1_pil, image2_pil = find_correspondences(image_path1,image_path2,num_pairs=20)
+        print("image1_pil dopo crop:",image1_pil.size)
 
+        original_size_x,original_size_y= image1_pil.size
+        diag_original = np.sqrt(original_size_x**2+original_size_y**2)
+
+
+        crop_size_x,crop_size_y= img_crop[:,:,0].shape
+        diag_crop = np.sqrt(crop_size_x**2+crop_size_y**2)
+        size_ratio_x = original_size_x/crop_size_x
+        size_ratio_y = original_size_y/crop_size_y
+        scale_ratio = diag_original/diag_crop
+
+        print("size ratio x:",size_ratio_x)
+        print("size ratio y:",size_ratio_y)
         print("points1:",points1)
         
         print("points2:",points2)
@@ -335,14 +370,15 @@ if __name__ == "__main__":
         
         
         _,y_offset,x_offset=img_utils.make_quadratic_crop(image1_pil,bbox)
-        
+        print("y_offset after crop:" ,y_offset)
+        print("x_offset after crop:",x_offset)
 
         print("image1:",image1_pil.size)
         print("image2:",image2_pil.size)
         
         
 
-        i=1
+        #i=0
         nocs_path = "/home/andrea/Desktop/Thesis_project/nocs/obj_000014.ply" #config["mask_path"].replace("/Segmented/mask","/nocs")+"/"+text_prompt+"_"+subfolder_nocs+"_sample"
         assets_data_type =".png"
         image_nocs_path = os.path.join(nocs_path, f"{str(i).zfill(6)}{assets_data_type}")
@@ -384,8 +420,12 @@ if __name__ == "__main__":
         print("y_offset " , y_offset)
         print("x_offset: ", x_offset)
 
-        points1[:, 0] += y_offset  # Aggiungi l'offset alla prima colonna (x)
-        points1[:, 1] += x_offset  # Aggiungi l'offset alla prima colonna (x)
+        points1[:, 0] = (points1[:, 0] / np.round(scale_ratio)).astype(int)
+        points1[:, 1] = (points1[:, 1] / np.round(scale_ratio)).astype(int)
+        points1[:, 0] += (y_offset ) # Aggiungi l'offset alla prima colonna (x)
+        points1[:, 1] += (x_offset ) # Aggiungi l'offset alla prima colonna (x)
+        
+        
         points1[:,[0,1]] = points1[:,[1,0]]
 
 
@@ -393,9 +433,12 @@ if __name__ == "__main__":
         with open(scale_path, 'r') as f:
             data = yaml.safe_load(f)
         scaling_factor=data["scaling_factor"]
+        print("scaling factor:",scaling_factor)
         #pc = r3D.image_to_pointCloud(img_nocs)
         #mesh= r3D.nocs_to_mesh(pc,scaling_factor)
         #r3D.generate_pointCloud(mesh)
+
+        obj_id = 14 
 
         pc = r3D.image_to_pointCloud(img_nocs)
         mesh= r3D.nocs_to_mesh(pc,scaling_factor)
@@ -447,15 +490,17 @@ if __name__ == "__main__":
         print("t:",tvec)
         
         json_gt="/home/andrea/Downloads/ycbv_train_pbr/train_pbr/000049/scene_gt.json"
-        gt_R,gt_T=js.estrai_parametri(imgId=image_id,json_path=json_gt,target_obj_id=14)
+        gt_R,gt_T=js.estrai_parametri(imgId=image_id,json_path=json_gt,target_obj_id=obj_id)
         print("GtR:",gt_R)
         print("GtT:",gt_T)
+
+        
 
         rvec_gt,_=cv2.Rodrigues(gt_R)
         tvec_gt = gt_T
         img_utils.draw_projected_3d_bbox(
         image=image1_pil_show,
-        obj_id="14",
+        obj_id=str(obj_id),
         rvec=rvec,
         tvec=tvec,
         camera_matrix=cam_K,

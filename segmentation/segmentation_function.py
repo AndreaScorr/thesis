@@ -22,7 +22,7 @@ def segmentation(image_path , mask_path , mask_file_name, segmentation_path, seg
     results = model.predict([image_pil], [text_prompt])
 
     #extract the mask
-    mask = results[0]["masks"]
+    mask = results[0]["masks"][1]
 
 
     # Convert to numpy array

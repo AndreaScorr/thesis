@@ -1,3 +1,4 @@
+import json
 import cv2
 
 import numpy as np
@@ -63,8 +64,12 @@ def nocs_to_mesh(points, scaling_factor):
 
     "convert normalized object coordinate space to  mesh"
     mesh = []
+    models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json"
+    # Carica le dimensioni reali dell’oggetto
+    with open(models_info_path, "r") as f:
+        models_info = json.load(f)
 
-
+  
 
     for i in range(points.shape[0]):
         x = points[i, 0]
@@ -78,6 +83,11 @@ def nocs_to_mesh(points, scaling_factor):
         x = x*2-1
         y = y*2-1
         z = z*2-1
+
+        #x = x * size_x
+        #y = y * size_y
+        #z = z * size_z
+
         reconstructed_vertex = [x * scaling_factor, y * scaling_factor, z * scaling_factor]
 
         mesh.append(reconstructed_vertex)
@@ -91,6 +101,10 @@ def features_nocs_to_mesh(points, scaling_factor):
 
     "convert normalized object coordinate space to  mesh"
     mesh = []
+    models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json"
+    # Carica le dimensioni reali dell’oggetto
+    with open(models_info_path, "r") as f:
+        models_info = json.load(f)
 
 
 
@@ -106,6 +120,10 @@ def features_nocs_to_mesh(points, scaling_factor):
         x = x*2-1
         y = y*2-1
         z = z*2-1
+
+        #x = x * size_x
+        #y = y * size_y
+        #z = z * size_z
         reconstructed_vertex = [x * scaling_factor, y * scaling_factor, z * scaling_factor]
 
         mesh.append(reconstructed_vertex)

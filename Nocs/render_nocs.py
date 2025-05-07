@@ -74,7 +74,7 @@ args = parser.parse_args()
 
 config = load_config(args.config)
 
-obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000002.ply" #config["glb_path"]
+obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000014.ply" #config["glb_path"]
 name_file = obj_path.split("/")[-1]
 name_file = name_file.removesuffix('.glb')
 name_file = name_file.removesuffix('.ply')
@@ -199,7 +199,7 @@ else:
 
 obj_location = np.array(blender_object.location)
 
-
+'''
 # Define how many views to render
 num_views = 3# or any number provided by the user
 
@@ -217,7 +217,46 @@ def spherical_coords(num_views, radius=2, theta_range=(0, np.pi / 2)):
 
 # Calculate camera positions
 #camera_positions = spherical_coords(num_views, radius=2, theta_range=(0, np.pi / 2))
-camera_positions = spherical_coords(num_views, radius=600, theta_range=(0, np.pi / 2))
+camera_positions = spherical_coords(num_views, radius=300, theta_range=(0, np.pi / 2))'''
+# Numero di viste da generare
+num_views = 20  # puoi modificarlo se necessario
+
+# Funzione per calcolare i vertici di un icosaedro
+def icosahedron_coords(num_views, radius=2):
+    phi = (1 + np.sqrt(5)) / 2  # Rapporto aureo
+
+    # 12 vertici dell'icosaedro centrato sull'origine
+    verts = [
+        (-1,  phi, 0), (1,  phi, 0), (-1, -phi, 0), (1, -phi, 0),
+        (0, -1,  phi), (0, 1,  phi), (0, -1, -phi), (0, 1, -phi),
+        ( phi, 0, -1), ( phi, 0, 1), (-phi, 0, -1), (-phi, 0, 1)
+    ]
+
+    # Normalizza i vertici sulla sfera di raggio `radius`
+    verts = np.array(verts)
+    verts = radius * verts / np.linalg.norm(verts, axis=1, keepdims=True)
+
+    # Se vuoi più di 12 viste, aggiungi centroidi delle facce (semplificato)
+    if num_views > len(verts):
+        from scipy.spatial import ConvexHull
+        hull = ConvexHull(verts)
+        extra = num_views - len(verts)
+        extra_coords = []
+        for simplex in hull.simplices:
+            if len(extra_coords) >= extra:
+                break
+            tri = verts[simplex]
+            centroid = np.mean(tri, axis=0)
+            centroid = radius * centroid / np.linalg.norm(centroid)
+            extra_coords.append(centroid)
+        coords = verts.tolist() + extra_coords
+    else:
+        indices = np.linspace(0, len(verts)-1, num_views, dtype=int)
+        coords = verts[indices].tolist()
+
+    return coords
+
+camera_positions=icosahedron_coords(num_views,radius=350)
 #camera_positions = spherical_coords(num_views, radius=1500, theta_range=(0, np.pi / 2))
 #print(camera_positions)
 can2world_matrix_array =[]
