@@ -74,7 +74,7 @@ args = parser.parse_args()
 
 config = load_config(args.config)
 
-obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000014.ply" #config["glb_path"]
+obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000015.ply" #config["glb_path"]
 name_file = obj_path.split("/")[-1]
 name_file = name_file.removesuffix('.glb')
 name_file = name_file.removesuffix('.ply')
@@ -221,6 +221,7 @@ camera_positions = spherical_coords(num_views, radius=300, theta_range=(0, np.pi
 # Numero di viste da generare
 num_views = 20  # puoi modificarlo se necessario
 
+'''
 # Funzione per calcolare i vertici di un icosaedro
 def icosahedron_coords(num_views, radius=2):
     phi = (1 + np.sqrt(5)) / 2  # Rapporto aureo
@@ -256,7 +257,8 @@ def icosahedron_coords(num_views, radius=2):
 
     return coords
 
-camera_positions=icosahedron_coords(num_views,radius=350)
+
+camera_positions=icosahedron_coords(num_views,radius=(scaling_factor+100))
 #camera_positions = spherical_coords(num_views, radius=1500, theta_range=(0, np.pi / 2))
 #print(camera_positions)
 can2world_matrix_array =[]
@@ -268,6 +270,74 @@ for pos in camera_positions:
     cam2world_matrix = bproc.math.build_transformation_mat(cam_location, rotation_matrix)
     can2world_matrix_array.append(cam2world_matrix)
     bproc.camera.add_camera_pose(cam2world_matrix)
+'''
+def icosahedron_coords_with_orientations(num_views, rotations_per_view=4, radius=2):
+    phi = (1 + np.sqrt(5)) / 2
+
+    verts = np.array([
+        (-1,  phi, 0), (1,  phi, 0), (-1, -phi, 0), (1, -phi, 0),
+        (0, -1,  phi), (0, 1,  phi), (0, -1, -phi), (0, 1, -phi),
+        ( phi, 0, -1), ( phi, 0, 1), (-phi, 0, -1), (-phi, 0, 1)
+    ])
+    verts = radius * verts / np.linalg.norm(verts, axis=1, keepdims=True)
+
+    if num_views > len(verts):
+        from scipy.spatial import ConvexHull
+        hull = ConvexHull(verts)
+        extra = num_views - len(verts)
+        extra_coords = []
+        for simplex in hull.simplices:
+            if len(extra_coords) >= extra:
+                break
+            tri = verts[simplex]
+            centroid = np.mean(tri, axis=0)
+            centroid = radius * centroid / np.linalg.norm(centroid)
+            extra_coords.append(centroid)
+        base_coords = verts.tolist() + extra_coords
+    else:
+        indices = np.linspace(0, len(verts)-1, num_views, dtype=int)
+        base_coords = verts[indices].tolist()
+
+    # Ripetiamo le coordinate e aggiungiamo angolo di roll
+    camera_positions = []
+    roll_angles = []
+
+    for coord in base_coords:
+        for i in range(rotations_per_view):
+            angle = (2 * np.pi * i) / rotations_per_view  # da 0 a 360°
+            camera_positions.append(coord)
+            roll_angles.append(angle)
+
+    return camera_positions, roll_angles
+
+
+camera_positions, roll_angles = icosahedron_coords_with_orientations(
+    num_views, rotations_per_view=4, radius=(scaling_factor + 100)
+)
+
+can2world_matrix_array = []
+
+for pos, roll in zip(camera_positions, roll_angles):
+    cam_location = np.array(obj_location) + np.array(pos)
+    forward_vec = obj_location - cam_location
+
+    # Ottieni matrice di rotazione base dalla direzione di vista
+    rotation_matrix = bproc.camera.rotation_from_forward_vec(forward_vec)
+    axis = forward_vec / np.linalg.norm(forward_vec)
+    K = np.array([
+        [0, -axis[2], axis[1]],
+        [axis[2], 0, -axis[0]],
+        [-axis[1], axis[0], 0]
+    ])
+    roll_matrix = np.eye(3) + np.sin(roll) * K + (1 - np.cos(roll)) * (K @ K)
+    # Applica rotazione attorno all'asse della vista (asse Z della camera)
+    #roll_matrix = bproc.math.build_rotation_mat(roll, forward_vec)
+    final_rotation = roll_matrix @ rotation_matrix
+
+    cam2world_matrix = bproc.math.build_transformation_mat(cam_location, final_rotation)
+    can2world_matrix_array.append(cam2world_matrix)
+    bproc.camera.add_camera_pose(cam2world_matrix)
+
 
 #print(cam2world_matrix)
 

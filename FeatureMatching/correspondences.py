@@ -38,7 +38,7 @@ def update_config(config_path, updates):
 
 
 def find_correspondences(image_path1: str, image_path2: str, num_pairs: int = 10, load_size: int = 224, layer: int = 8,
-                         facet: str = 'token', bin: bool = True, thresh: float = 0.20, model_type: str = 'dino_vits8',
+                         facet: str = 'key', bin: bool = True, thresh: float = 0.20, model_type: str = 'dino_vits8',
                          stride: int = 4) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]],
                                                                               Image.Image, Image.Image]:
     """
@@ -76,8 +76,8 @@ def find_correspondences(image_path1: str, image_path2: str, num_pairs: int = 10
 
     # calculate similarity between image1 and image2 descriptors
     similarities = chunk_cosine_sim(descriptors1, descriptors2)
-    print("size num_patches1:",(num_patches1))
-    print("size num_patches2:",(num_patches2))
+    #print("size num_patches1:",(num_patches1))
+    #print("size num_patches2:",(num_patches2))
 
     # calculate best buddies
     image_idxs = torch.arange(num_patches1[0] * num_patches1[1], device=device)
@@ -264,7 +264,6 @@ def chunk_cosine_sim(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
 
 
 
-
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
@@ -281,22 +280,36 @@ if __name__ == "__main__":
         #save_dir.mkdir(exist_ok=True, parents=True)
 
         
-        image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000201.jpg" #works well
-        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000547.jpg" #works well
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000302.jpg" #works well
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000083.jpg" #works well
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000132.jpg"  
-        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000440.jpg"  
+        image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000170.jpg"  
 
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000106.jpg"
         
         image_id =  image_path1.split("/")[-1].removesuffix(".jpg")
         image_id = int(image_id)
-
+        image1_pil =Image.open(image_path1).convert('RGB')
+        image1_pil_show = Image.open(image_path1)
+        #plt.imshow(image1_pil_show)
+        #plt.show()
         #print("image_id:",image_id)
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000305.jpg"
+        #template_id = 20
+        #image_path2 = "blender_render/obj_000014.ply/000020.png"
+        #i=20
         
-        image_path2 = "blender_render/obj_000014.ply/000005.png"
-        i=(int)(image_path2.split("/")[-1].removesuffix(".png"))
+        #best_theta = np.inf
+        #best_ADD = np.inf
+        best_i = 0
+        template_id = 27
+        image_path2 = f"blender_render/obj_000015.ply/{str(template_id).zfill(6)}.png"
+        print(template_id)
+        #i=(int)(image_path2.split("/")[-1].removesuffix(".png"))
+        
+        
 
+        
         #image_path2 = "blender_render/obj_000005.ply/000002.png"
 
 
@@ -305,25 +318,20 @@ if __name__ == "__main__":
         plt.figure(2)
         plt.imshow(image1_pil)
         plt.show()
-        print(config["text_prompt"])
+        #print(config["text_prompt"])
         mask = segmentation(image1_pil,config["text_prompt"])
 
         
-
         bbox = get_bounding_box_from_mask(mask)
 
-        print("image1_pil prima crop:",image1_pil.size)
+        #print("image1_pil prima crop:",image1_pil.size)
 
         
-
-
         img_crop, y_offset, x_offset = img_utils.make_quadratic_crop(np.array(image1_pil), bbox)
 
-        print("imgcrop",img_crop.shape)
+        #print("imgcrop",img_crop.shape)
         
-        
-
-   
+    
 
         print("y_offset:" ,y_offset)
         print("x_offset:",x_offset)
@@ -332,7 +340,6 @@ if __name__ == "__main__":
         mask_crop = (mask_crop > 0).astype(np.uint8) * 255  # adesso è 0 o 255
 
         #print("mask crop", mask_crop.shape)
-
 
 
         img_crop = cv2.bitwise_and(img_crop, img_crop, mask=mask_crop)
@@ -347,8 +354,9 @@ if __name__ == "__main__":
         image_path1="temp/img_crop.png"
         cv2.imwrite(image_path1,img_crop)
 
-        points1, points2, image1_pil, image2_pil = find_correspondences(image_path1,image_path2,num_pairs=20)
-        print("image1_pil dopo crop:",image1_pil.size)
+        points1, points2, image1_pil, image2_pil = find_correspondences(image_path1,image_path2,num_pairs=40)
+        print("n_correspondences:",len(points1))
+        #print("image1_pil dopo crop:",image1_pil.size)
 
         original_size_x,original_size_y= image1_pil.size
         diag_original = np.sqrt(original_size_x**2+original_size_y**2)
@@ -360,28 +368,26 @@ if __name__ == "__main__":
         size_ratio_y = original_size_y/crop_size_y
         scale_ratio = diag_original/diag_crop
 
-        print("size ratio x:",size_ratio_x)
-        print("size ratio y:",size_ratio_y)
-        print("points1:",points1)
+        #print("size ratio x:",size_ratio_x)
+        #print("size ratio y:",size_ratio_y)
+        #print("points1:",points1)
         
-        print("points2:",points2)
+        #print("points2:",points2)
         draw_correspondences(points1,points2,image1_pil,image2_pil)
         #plt.show()
         
         
-        _,y_offset,x_offset=img_utils.make_quadratic_crop(image1_pil,bbox)
-        print("y_offset after crop:" ,y_offset)
+        _,y_offset,x_offset=img_utils.make_quadratic_crop(image1_pil_show,bbox)
+        print("y_offset after crop show:" ,y_offset)
         print("x_offset after crop:",x_offset)
 
-        print("image1:",image1_pil.size)
-        print("image2:",image2_pil.size)
+        #print("image1:",image1_pil.size)
+        #print("image2:",image2_pil.size)
         
-        
-
         #i=0
-        nocs_path = "/home/andrea/Desktop/Thesis_project/nocs/obj_000014.ply" #config["mask_path"].replace("/Segmented/mask","/nocs")+"/"+text_prompt+"_"+subfolder_nocs+"_sample"
+        nocs_path = "/home/andrea/Desktop/Thesis_project/nocs/obj_000015.ply" #config["mask_path"].replace("/Segmented/mask","/nocs")+"/"+text_prompt+"_"+subfolder_nocs+"_sample"
         assets_data_type =".png"
-        image_nocs_path = os.path.join(nocs_path, f"{str(i).zfill(6)}{assets_data_type}")
+        image_nocs_path = os.path.join(nocs_path, f"{str(template_id).zfill(6)}{assets_data_type}")
         #print(f'image_nocs path: {image_nocs_path}')
         img_nocs =cv2.imread(image_nocs_path,cv2.IMREAD_COLOR_RGB)
         #img_nocs= cv2.resize(img_nocs,(224,224))
@@ -390,7 +396,6 @@ if __name__ == "__main__":
         
         #print("image_nocs" ,img_nocs.shape)
         
-
         assets_data_type= ".png"
         #print(img2_pixel_matches)
         features3Dpoint =[]
@@ -411,14 +416,13 @@ if __name__ == "__main__":
         plt.figure(5)
         plt.imshow(img_nocs)
 
-        plt.show()
+        #plt.show()
 
-        
-         #Converti in array NumPy
+        #Converti in array NumPy
         points1 = np.array(points1)
 
-        print("y_offset " , y_offset)
-        print("x_offset: ", x_offset)
+        #print("y_offset " , y_offset)
+        #print("x_offset: ", x_offset)
 
         points1[:, 0] = (points1[:, 0] / np.round(scale_ratio)).astype(int)
         points1[:, 1] = (points1[:, 1] / np.round(scale_ratio)).astype(int)
@@ -433,24 +437,24 @@ if __name__ == "__main__":
         with open(scale_path, 'r') as f:
             data = yaml.safe_load(f)
         scaling_factor=data["scaling_factor"]
-        print("scaling factor:",scaling_factor)
+        #print("scaling factor:",scaling_factor)
         #pc = r3D.image_to_pointCloud(img_nocs)
         #mesh= r3D.nocs_to_mesh(pc,scaling_factor)
         #r3D.generate_pointCloud(mesh)
 
-        obj_id = 14 
+        obj_id = 15 
 
         pc = r3D.image_to_pointCloud(img_nocs)
         mesh= r3D.nocs_to_mesh(pc,scaling_factor)
-
+        #print("mesh shape",mesh.shape)
         features_nocs_to_mesh =r3D.features_nocs_to_mesh(features3Dpoint,scaling_factor)
         feature_point_tuple = [tuple(l) for l in features_nocs_to_mesh]
-        plt.show()
+        #plt.show()
 
         r3D.generate_pointCloud(mesh,feature_point_tuple)
 
-        print(image1_pil_show.size)
-        print(image1_pil.size)
+        #print(image1_pil_show.size)
+        #print(image1_pil.size)
         
         target_size = (image1_pil.size[1],image1_pil.size[0]) 
         fx = 1066.778
@@ -459,14 +463,14 @@ if __name__ == "__main__":
         cy = 241.3108977675438
 
         _,intrinsic=img_utils.input_resize(image1_pil_show,image1_pil.size,intrinsics=[fx, fy, cx, cy])
-        print("instrinsic:",intrinsic)
+        #print("instrinsic:",intrinsic)
         #clfx,fy,cx,cy=intrinsic
         #fx,fy,cx,cy=intrinsic
         cam_K = np.array([[fx,        0,      cx],
-                          [0.0,       fy,     cy],
-                          [0.0,       0.0,    1.0]])
+                        [0.0,       fy,     cy],
+                        [0.0,       0.0,    1.0]])
         
-        print("new CAm",cam_K)
+        # print("new CAm",cam_K)
         object_points_3D = np.array(features_nocs_to_mesh, dtype=np.float32)
         image_points_2D = np.array(points1, dtype=np.float32)
         
@@ -474,7 +478,8 @@ if __name__ == "__main__":
 
         #success,rvec,tvec=cv2.solvePnP(object_points_3D, image_points_2D, cam_K, distCoeffs=None)
         dist_coeffs = np.ones((5, 1)) *0
-
+        #print(image_points_2D.size)
+       
         retval, rvec, tvec, inliers = cv2.solvePnPRansac(object_points_3D, image_points_2D, cam_K,distCoeffs=dist_coeffs, iterationsCount=200, reprojectionError=9.0)
         
         
@@ -484,7 +489,7 @@ if __name__ == "__main__":
         #tvec=tvec_gt
         error= np.linalg.norm(tvec-tvec_gt)
         distance = np.sqrt(np.sum((tvec - tvec_gt)**2))
-        print("error:",error)
+        #print("error:",error)
         print("distance ^2: ", distance)
         print("R:",R)
         print("t:",tvec)
@@ -494,10 +499,26 @@ if __name__ == "__main__":
         print("GtR:",gt_R)
         print("GtT:",gt_T)
 
-        
+        #print("shape points 3d:",object_points_3D.shape)
 
+        Add , theta= img_utils.compute_add(R_gt=gt_R,T_gt=tvec_gt,R_est=R,T_est=tvec,model_points=object_points_3D)
+        print("ADD:",Add)
+        print("theta:", theta)
+        '''    
+        if(Add < best_ADD) and (theta<best_theta):
+            best_ADD = Add
+            best_theta = theta
+            best_R = R
+            best_t = tvec
+            best_i = template_id
+        '''
+        #rvec,_=cv2.Rodrigues(best_R)
+        #tvec= best_t
+        #print("best r: ", best_R)
+        #print("best T:", best_t)
         rvec_gt,_=cv2.Rodrigues(gt_R)
         tvec_gt = gt_T
+        '''
         img_utils.draw_projected_3d_bbox(
         image=image1_pil_show,
         obj_id=str(obj_id),
@@ -506,5 +527,19 @@ if __name__ == "__main__":
         camera_matrix=cam_K,
         dist_coeffs=None,
         models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json"
+        )'''
+
+        img_utils.draw_projected_3d_bbox_gt(
+        image=image1_pil_show,
+        obj_id=str(obj_id),
+        rvec=rvec,
+        tvec=tvec,
+        rvec_gt=rvec_gt,
+        tvec_gt=tvec_gt,
+        camera_matrix=cam_K,
+        dist_coeffs=None,
+        models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json"
         )
-        
+            
+            
+

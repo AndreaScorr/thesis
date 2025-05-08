@@ -5,14 +5,14 @@ import ImageUtils as img_utils
 import json_utils as js
 import cv2
 import numpy as np
-image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000201.jpg"
+image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000170.jpg"
 
 image_id =  image_path1.split("/")[-1].removesuffix(".jpg")
 image_id = int(image_id)
 print(image_id)
 image1_pil_show = Image.open(image_path1)
 
-obj_id=14
+obj_id=15
 
 
 json_gt="/home/andrea/Downloads/ycbv_train_pbr/train_pbr/000049/scene_gt.json"

@@ -27,6 +27,7 @@ import yaml
 import remapping_to_3D as r3D
 from lang_sam import LangSAM
 import ImageUtils as img_utils
+from math import acos, degrees
 
 def find_nearest_non_black_white(img, x, y, max_search_radius=10):
     """
@@ -288,9 +289,123 @@ def draw_projected_3d_bbox(image, obj_id, rvec, tvec, camera_matrix, dist_coeffs
     plt.axis("off")
     plt.show()
 
+def draw_projected_3d_bbox_gt(image, obj_id, rvec, tvec, rvec_gt, tvec_gt, camera_matrix, dist_coeffs, models_info_path):
+    
+   # Definisci la bounding box normalizzata [0, 1] nel frame dell’oggetto
+    bbox_3D = np.array([
+        [-0.5, -0.5, -0.5],
+        [ 0.5, -0.5, -0.5],
+        [ 0.5,  0.5, -0.5],
+        [-0.5,  0.5, -0.5],
+        [-0.5, -0.5,  0.5],
+        [ 0.5, -0.5,  0.5],
+        [ 0.5,  0.5,  0.5],
+        [-0.5,  0.5,  0.5]
+    ], dtype=np.float32)
+
+    # Carica le dimensioni reali dell’oggetto
+    with open(models_info_path, "r") as f:
+        models_info = json.load(f)
+
+    size_x = models_info[obj_id]["size_x"]
+    size_y = models_info[obj_id]["size_y"]
+    size_z = models_info[obj_id]["size_z"]
+    scaling_factor = np.array([size_x, size_y, size_z], dtype=np.float32)
+
+    #tvec = np.squeeze(tvec)*scaling_factor
+    # Scala la bounding box
+    bbox_3D_scaled = bbox_3D * scaling_factor
+
+    # Proiezione nel piano immagine
+    projected_points, _ = cv2.projectPoints(bbox_3D_scaled, rvec, tvec, camera_matrix, dist_coeffs)
+    projected_points = projected_points.reshape(-1, 2)
+    projected_points = np.where(np.isnan(projected_points), -1, projected_points).astype(int)
+
+    image = np.array(image)
+
+    # Carica immagine
+   # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Edge della bounding box
+    edges = [
+        (0,1), (1,2), (2,3), (3,0),  # base
+        (4,5), (5,6), (6,7), (7,4),  # top
+        (0,4), (1,5), (2,6), (3,7)   # vertical edges
+    ]
+
+    # Disegna le linee
+    for start, end in edges:
+        pt1_raw = projected_points[start]
+        pt2_raw = projected_points[end]
+
+        if (
+            pt1_raw is None or pt2_raw is None or
+            np.any(np.isnan(pt1_raw[:2])) or
+            np.any(np.isnan(pt2_raw[:2])) or
+            np.any(np.isinf(pt1_raw[:2])) or
+            np.any(np.isinf(pt2_raw[:2]))
+        ):
+            continue
+
+        try:
+            pt1 = tuple(int(round(float(x))) for x in pt1_raw[:2])
+            pt2 = tuple(int(round(float(x))) for x in pt2_raw[:2])
+        except Exception:
+            continue
+
+        cv2.line(image, pt1, pt2, color=(255, 255, 0), thickness=2)
+    
+    
+    # Proiezione nel piano immagine
+    projected_points2, _ = cv2.projectPoints(bbox_3D_scaled, rvec_gt, tvec_gt, camera_matrix, dist_coeffs)
+    projected_points2 = projected_points2.reshape(-1, 2)
+    projected_points2 = np.where(np.isnan(projected_points2), -1, projected_points2).astype(int)
+
+    #image = np.array(image)
+
+    # Carica immagine
+   # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Edge della bounding box
+    edges2 = [
+        (0,1), (1,2), (2,3), (3,0),  # base
+        (4,5), (5,6), (6,7), (7,4),  # top
+        (0,4), (1,5), (2,6), (3,7)   # vertical edges
+    ]
+
+    # Disegna le linee
+    for start, end in edges2:
+        pt1_raw = projected_points2[start]
+        pt2_raw = projected_points2[end]
+
+        if (
+            pt1_raw is None or pt2_raw is None or
+            np.any(np.isnan(pt1_raw[:2])) or
+            np.any(np.isnan(pt2_raw[:2])) or
+            np.any(np.isinf(pt1_raw[:2])) or
+            np.any(np.isinf(pt2_raw[:2]))
+        ):
+            continue
+
+        try:
+            pt1 = tuple(int(round(float(x))) for x in pt1_raw[:2])
+            pt2 = tuple(int(round(float(x))) for x in pt2_raw[:2])
+        except Exception:
+            continue
+
+        cv2.line(image, pt1, pt2, color=(0, 255, 0), thickness=2)
+
+    # Mostra il risultato
+    plt.figure(figsize=(10, 8))
+    plt.imshow(image)
+    plt.title(f"3D Bounding Box Projection - Object {obj_id}")
+    plt.axis("off")
+    plt.show()
 
 
 def input_resize(image, target_size, intrinsics):
+
+
     # image: [y, x, c] expected row major
     # target_size: [y, x] expected row major
     # instrinsics: [fx, fy, cx, cy]
@@ -312,3 +427,42 @@ def input_resize(image, target_size, intrinsics):
         intrinsics = intrinsics * resize_scale
 
     return image, intrinsics
+
+
+
+def compute_add(R_gt, T_gt, R_est, T_est, model_points):
+    """
+    Calcola l'ADD (Average Distance of Model Points) tra due pose.
+
+    Parametri:
+    - R_gt: Matrice di rotazione ground truth (3x3)
+    - T_gt: Vettore di traslazione ground truth (3,)
+    - R_est: Matrice di rotazione stimata (3x3)
+    - T_est: Vettore di traslazione stimata (3,)
+    - model_points: array (N, 3) dei punti del modello
+
+    Ritorna:
+    - errore ADD (float)
+    """
+    #transformed_gt = (R_gt @ model_points.T).T + T_gt
+    #transformed_est = (R_est @ model_points.T).T + T_est
+    #distances = np.linalg.norm(transformed_gt - transformed_est, axis=1)
+    T_est = T_est.reshape(3,)
+    T_gt = T_gt.reshape(3,)
+    transformed_gt = model_points @ R_gt.T + T_gt
+    transformed_est = model_points @ R_est.T + T_est
+    #print("traformed gt",transformed_gt)
+    #print("traformed est",transformed_est)
+    
+    distances = np.linalg.norm(transformed_gt - transformed_est, axis=1)
+
+    R_diff = R_gt.T @ R_est
+    trace = np.trace(R_diff)
+    cos_theta = (trace - 1) / 2
+    # Clipping per evitare errori numerici fuori da [-1,1]
+    cos_theta = np.clip(cos_theta, -1.0, 1.0)
+    theta_rad = acos(cos_theta)
+    theta_deg = degrees(theta_rad)
+     
+
+    return np.mean(distances),theta_deg
