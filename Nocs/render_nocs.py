@@ -74,7 +74,7 @@ args = parser.parse_args()
 
 config = load_config(args.config)
 
-obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000015.ply" #config["glb_path"]
+obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000014.ply" #config["glb_path"]
 name_file = obj_path.split("/")[-1]
 name_file = name_file.removesuffix('.glb')
 name_file = name_file.removesuffix('.ply')
@@ -312,7 +312,7 @@ def icosahedron_coords_with_orientations(num_views, rotations_per_view=4, radius
 
 
 camera_positions, roll_angles = icosahedron_coords_with_orientations(
-    num_views, rotations_per_view=4, radius=(scaling_factor + 100)
+    num_views, rotations_per_view=4, radius=(scaling_factor + 50)
 )
 
 can2world_matrix_array = []

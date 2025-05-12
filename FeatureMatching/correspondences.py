@@ -38,7 +38,7 @@ def update_config(config_path, updates):
 
 
 def find_correspondences(image_path1: str, image_path2: str, num_pairs: int = 10, load_size: int = 224, layer: int = 8,
-                         facet: str = 'key', bin: bool = True, thresh: float = 0.20, model_type: str = 'dino_vits8',
+                         facet: str = 'token', bin: bool = True, thresh: float = 0.20, model_type: str = 'dino_vits8',
                          stride: int = 4) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]],
                                                                               Image.Image, Image.Image]:
     """
@@ -283,7 +283,7 @@ if __name__ == "__main__":
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000302.jpg" #works well
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000083.jpg" #works well
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000132.jpg"  
-        image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000170.jpg"  
+        image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000201.jpg"  
 
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000106.jpg"
         
@@ -302,8 +302,8 @@ if __name__ == "__main__":
         #best_theta = np.inf
         #best_ADD = np.inf
         best_i = 0
-        template_id = 27
-        image_path2 = f"blender_render/obj_000015.ply/{str(template_id).zfill(6)}.png"
+        template_id = 20
+        image_path2 = f"blender_render/obj_000014.ply/{str(template_id).zfill(6)}.png"
         print(template_id)
         #i=(int)(image_path2.split("/")[-1].removesuffix(".png"))
         
@@ -354,7 +354,7 @@ if __name__ == "__main__":
         image_path1="temp/img_crop.png"
         cv2.imwrite(image_path1,img_crop)
 
-        points1, points2, image1_pil, image2_pil = find_correspondences(image_path1,image_path2,num_pairs=40)
+        points1, points2, image1_pil, image2_pil = find_correspondences(image_path1,image_path2,num_pairs=30)
         print("n_correspondences:",len(points1))
         #print("image1_pil dopo crop:",image1_pil.size)
 
@@ -385,7 +385,7 @@ if __name__ == "__main__":
         #print("image2:",image2_pil.size)
         
         #i=0
-        nocs_path = "/home/andrea/Desktop/Thesis_project/nocs/obj_000015.ply" #config["mask_path"].replace("/Segmented/mask","/nocs")+"/"+text_prompt+"_"+subfolder_nocs+"_sample"
+        nocs_path = "/home/andrea/Desktop/Thesis_project/nocs/obj_000014.ply" #config["mask_path"].replace("/Segmented/mask","/nocs")+"/"+text_prompt+"_"+subfolder_nocs+"_sample"
         assets_data_type =".png"
         image_nocs_path = os.path.join(nocs_path, f"{str(template_id).zfill(6)}{assets_data_type}")
         #print(f'image_nocs path: {image_nocs_path}')
@@ -442,7 +442,7 @@ if __name__ == "__main__":
         #mesh= r3D.nocs_to_mesh(pc,scaling_factor)
         #r3D.generate_pointCloud(mesh)
 
-        obj_id = 15 
+        obj_id = 14 
 
         pc = r3D.image_to_pointCloud(img_nocs)
         mesh= r3D.nocs_to_mesh(pc,scaling_factor)
@@ -466,9 +466,9 @@ if __name__ == "__main__":
         #print("instrinsic:",intrinsic)
         #clfx,fy,cx,cy=intrinsic
         #fx,fy,cx,cy=intrinsic
-        cam_K = np.array([[fx,        0,      cx],
-                        [0.0,       fy,     cy],
-                        [0.0,       0.0,    1.0]])
+        cam_K = np.array([[fx,         0,      cx],
+                          [0.0,        fy,     cy],
+                          [0.0,       0.0,    1.0]])
         
         # print("new CAm",cam_K)
         object_points_3D = np.array(features_nocs_to_mesh, dtype=np.float32)
@@ -499,11 +499,20 @@ if __name__ == "__main__":
         print("GtR:",gt_R)
         print("GtT:",gt_T)
 
-        #print("shape points 3d:",object_points_3D.shape)
 
-        Add , theta= img_utils.compute_add(R_gt=gt_R,T_gt=tvec_gt,R_est=R,T_est=tvec,model_points=object_points_3D)
+        d= img_utils.compute_model_diameter(model_points=object_points_3D)
+        Add , theta,passed= img_utils.compute_add(R_gt=gt_R,T_gt=tvec_gt,R_est=R,T_est=tvec,model_points=object_points_3D)
+
         print("ADD:",Add)
+        print("% 10  diameter:",(d*0.1))
         print("theta:", theta)
+        print("passed:",passed)
+
+        adds, theta_deg, d, passed=img_utils.compute_adds_S(R_gt=gt_R,T_gt=tvec_gt,R_est=R,T_est=tvec,model_points=object_points_3D)     
+        print("adds:",adds)
+        print("theta error:",theta_deg)
+        print("passed:",passed)
+
         '''    
         if(Add < best_ADD) and (theta<best_theta):
             best_ADD = Add
@@ -527,8 +536,9 @@ if __name__ == "__main__":
         camera_matrix=cam_K,
         dist_coeffs=None,
         models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json"
-        )'''
+        )
 
+        '''
         img_utils.draw_projected_3d_bbox_gt(
         image=image1_pil_show,
         obj_id=str(obj_id),

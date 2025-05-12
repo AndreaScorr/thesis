@@ -28,6 +28,9 @@ import remapping_to_3D as r3D
 from lang_sam import LangSAM
 import ImageUtils as img_utils
 from math import acos, degrees
+from scipy.spatial.distance import cdist
+from scipy.spatial import cKDTree
+
 
 def find_nearest_non_black_white(img, x, y, max_search_radius=10):
     """
@@ -428,7 +431,18 @@ def input_resize(image, target_size, intrinsics):
 
     return image, intrinsics
 
+def compute_model_diameter(model_points):
+    """
+    Calcola il diametro del modello, cioè la massima distanza tra tutte le coppie di punti.
 
+    Parametri:
+    - model_points: array (N, 3) dei punti del modello
+
+    Ritorna:
+    - diametro (float)
+    """
+    distances = cdist(model_points, model_points)  # (N, N)
+    return np.max(distances)
 
 def compute_add(R_gt, T_gt, R_est, T_est, model_points):
     """
@@ -440,15 +454,17 @@ def compute_add(R_gt, T_gt, R_est, T_est, model_points):
     - R_est: Matrice di rotazione stimata (3x3)
     - T_est: Vettore di traslazione stimata (3,)
     - model_points: array (N, 3) dei punti del modello
-
+    
     Ritorna:
     - errore ADD (float)
     """
+    #model_points_mm = model_points * 1000  # Non modifica l'originale
+
     #transformed_gt = (R_gt @ model_points.T).T + T_gt
     #transformed_est = (R_est @ model_points.T).T + T_est
     #distances = np.linalg.norm(transformed_gt - transformed_est, axis=1)
-    T_est = T_est.reshape(3,)
-    T_gt = T_gt.reshape(3,)
+    T_gt = T_gt.reshape(3,) #* 1000         # Da metri a millimetri
+    T_est = T_est.reshape(3,)# * 1000       # Da metri a millimetri
     transformed_gt = model_points @ R_gt.T + T_gt
     transformed_est = model_points @ R_est.T + T_est
     #print("traformed gt",transformed_gt)
@@ -463,6 +479,50 @@ def compute_add(R_gt, T_gt, R_est, T_est, model_points):
     cos_theta = np.clip(cos_theta, -1.0, 1.0)
     theta_rad = acos(cos_theta)
     theta_deg = degrees(theta_rad)
-     
+    add= np.mean(distances)
+    diameter = compute_model_diameter(model_points)
+    passed = add < (0.1 * diameter)
+    return add,theta_deg,passed
 
-    return np.mean(distances),theta_deg
+def compute_adds_S(R_gt, T_gt, R_est, T_est, model_points):
+    """
+    Calcola l'ADD-S (simmetrico) per oggetti con simmetrie.
+
+    Parametri:
+    - R_gt: Matrice di rotazione ground truth (3x3)
+    - T_gt: Vettore di traslazione ground truth (3,)
+    - R_est: Matrice di rotazione stimata (3x3)
+    - T_est: Vettore di traslazione stimata (3,)
+    - model_points: array (N, 3) dei punti del modello
+
+    Ritorna:
+    - errore ADD-S (float)
+    - errore angolare in gradi (float)
+    - d: diametro modello (float)
+    - passed: True se ADD-S < 0.1 * d
+    """
+
+    T_gt = T_gt.reshape(3,)
+    T_est = T_est.reshape(3,)
+
+    transformed_gt = model_points @ R_gt.T + T_gt
+    transformed_est = model_points @ R_est.T + T_est
+
+    # Nearest neighbor distance per punto stimato rispetto a GT
+    kdtree = cKDTree(transformed_gt)
+    distances, _ = kdtree.query(transformed_est, k=1)
+    adds = np.mean(distances)
+
+    # Errore angolare
+    R_diff = R_gt.T @ R_est
+    trace = np.trace(R_diff)
+    cos_theta = (trace - 1) / 2
+    cos_theta = np.clip(cos_theta, -1.0, 1.0)
+    theta_rad = acos(cos_theta)
+    theta_deg = degrees(theta_rad)
+
+    # Diametro modello
+    d = np.max(cdist(model_points, model_points))
+    passed = adds < 0.1 * d
+
+    return adds, theta_deg, d, passed
