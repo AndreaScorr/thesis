@@ -509,26 +509,26 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
 
 
         d= img_utils.compute_model_diameter(model_points=object_points_3D)
-        Add , theta,passed= img_utils.compute_add(R_gt=gt_R,T_gt=tvec_gt,R_est=R,T_est=tvec,model_points=object_points_3D)
+        #Add , theta,passed= img_utils.compute_add(R_gt=gt_R,T_gt=tvec_gt,R_est=R,T_est=tvec,model_points=object_points_3D)
+        Add=img_utils.add(pts=object_points_3D,
+                          R_gt=gt_R,
+                          T_gt=gt_T,
+                          R_est=R,
+                          T_est=tvec,
+                          models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json",obj_id=obj_id)
 
         print("ADD:",Add)
         print("% 10  diameter:",(d*0.1))
-        print("theta:", theta)
-        print("passed:",passed)
+        #print("theta:", theta)
+        #print("passed:",passed)
 
+        '''
         adds, theta_deg, d, passed=img_utils.compute_adds_S(R_gt=gt_R,T_gt=tvec_gt,R_est=R,T_est=tvec,model_points=object_points_3D)     
         print("adds:",adds)
         print("theta error:",theta_deg)
         print("passed:",passed)
-
-        '''    
-        if(Add < best_ADD) and (theta<best_theta):
-            best_ADD = Add
-            best_theta = theta
-            best_R = R
-            best_t = tvec
-            best_i = template_id
         '''
+      
         #rvec,_=cv2.Rodrigues(best_R)
         #tvec= best_t
         #print("best r: ", best_R)
@@ -563,8 +563,8 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         "data": {
             "GT_R": gt_R,
             "GT_T": gt_T,
-            "ADD": Add,
-            "ADD_S": adds
+            "ADD": Add
+            #"ADD_S": adds
             }
         }
         return result
@@ -585,10 +585,10 @@ if __name__ == "__main__":
 
     with torch.no_grad():
         obj_id = config["obj_id"]
-        dict_st_result=Estimate_Pose_from_correspondences(id_folder=55,
+        dict_st_result=Estimate_Pose_from_correspondences(id_folder=48,
                                                           id_image=1,
                                                           file_type="png",
-                                                          template_id=44,
+                                                          template_id=8,
                                                           obj_id=obj_id)
         print(dict_st_result)
         '''

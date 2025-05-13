@@ -431,6 +431,32 @@ def input_resize(image, target_size, intrinsics):
 
     return image, intrinsics
 
+def transform_pts_Rt(pts, R, t):
+    """Applies a rigid transformation to 3D points.
+
+    :param pts: nx3 ndarray with 3D points.
+    :param R: 3x3 rotation matrix.
+    :param t: 3x1 translation vector.
+    :return: nx3 ndarray with transformed 3D points.
+    """
+    assert pts.shape[1] == 3
+    pts_t = R.dot(pts.T) + t.reshape((3, 1))
+    return pts_t.T
+
+
+def add(pts,R_gt, T_gt, R_est, T_est,models_info_path,obj_id):
+    with open(models_info_path, "r") as f:
+        models_info = json.load(f)
+    center_dist = np.linalg.norm(T_est - T_gt)
+    spheres_overlap = center_dist < models_info[str(obj_id)]["diameter"]
+
+
+    pts_est = transform_pts_Rt(pts, R_est, T_est)
+    pts_gt = transform_pts_Rt(pts, R_gt, T_gt)
+    e = np.linalg.norm(pts_est - pts_gt, axis=1).mean()
+    return e
+
+
 def compute_model_diameter(model_points):
     """
     Calcola il diametro del modello, cioè la massima distanza tra tutte le coppie di punti.
@@ -443,7 +469,7 @@ def compute_model_diameter(model_points):
     """
     distances = cdist(model_points, model_points)  # (N, N)
     return np.max(distances)
-
+'''
 def compute_add(R_gt, T_gt, R_est, T_est, model_points):
     """
     Calcola l'ADD (Average Distance of Model Points) tra due pose.
@@ -479,7 +505,7 @@ def compute_add(R_gt, T_gt, R_est, T_est, model_points):
     cos_theta = np.clip(cos_theta, -1.0, 1.0)
     theta_rad = acos(cos_theta)
     theta_deg = degrees(theta_rad)
-    add= np.mean(distances)
+    add= np.mean(distances)*0.1
     diameter = compute_model_diameter(model_points)
     passed = add < (0.1 * diameter)
     return add,theta_deg,passed
@@ -525,4 +551,4 @@ def compute_adds_S(R_gt, T_gt, R_est, T_est, model_points):
     d = np.max(cdist(model_points, model_points))
     passed = adds < 0.1 * d
 
-    return adds, theta_deg, d, passed
+    return adds, theta_deg, d, passed'''
