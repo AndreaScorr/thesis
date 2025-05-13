@@ -9,3 +9,4 @@ ply_path: /home/andrea/Desktop/Thesis_project/Models/cup_000547_sample.ply
 scale_path: /home/andrea/Desktop/Thesis_project/config/obj_000014_scale.yaml
 segmentation_path: /home/andrea/Desktop/Thesis_project/Segmented/rgb
 text_prompt: red mug
+obj_id: 14

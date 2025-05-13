@@ -259,35 +259,38 @@ def chunk_cosine_sim(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
 
 
 
+def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_id, obj_id):
+        """
+        Calculate the pose 
+        Parameters:
+        - id_image: id of the input image
+        - file_type: type of the input image png or jpg
+        - template_id: it the template id used for feature matching
+        - obj_id: is the object id from 1 to 21 
+        """
 
 
-
-
-
-if __name__ == "__main__":
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, required=True, help='Path to config YAML file')
-    args = parser.parse_args()
-    config = load_config(args.config)
-
-    with torch.no_grad():
-
-        # prepare directories
-        #root_dir = Path(args.root_dir)
-        #pair_dirs = [x for x in root_dir.iterdir() if x.is_dir()]
         save_dir = "temp"
         #save_dir.mkdir(exist_ok=True, parents=True)
 
         
-        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000302.jpg" #works well
-        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000083.jpg" #works well
-        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000132.jpg"  
-        image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000201.jpg"  
+        
+        
+        #id_image = 201
+        folder_str = str(int(id_folder)).zfill(6) 
+        id_str = str(int(id_image)).zfill(6)
+        
+        #file_type = "jpg"
+
+        #nocs_path = f"/home/andrea/Desktop/Thesis_project/nocs/obj_{obj_str}.ply" 
+        #image_path1 = f"/home/andrea/Desktop/Thesis_project/Inputs/{id_str}.{file_type}"  
+        image_path1 = f"/home/andrea/test_set/ycbv_test_all/test/{folder_str}/rgb/{id_str}.{file_type}"  
 
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000106.jpg"
         
-        image_id =  image_path1.split("/")[-1].removesuffix(".jpg")
+        image_id =  image_path1.split("/")[-1].removesuffix(f".{file_type}")
+        #image_id =  image_path1.split("/")[-1].removesuffix(".png")
+
         image_id = int(image_id)
         image1_pil =Image.open(image_path1).convert('RGB')
         image1_pil_show = Image.open(image_path1)
@@ -302,8 +305,11 @@ if __name__ == "__main__":
         #best_theta = np.inf
         #best_ADD = np.inf
         best_i = 0
-        template_id = 20
-        image_path2 = f"blender_render/obj_000014.ply/{str(template_id).zfill(6)}.png"
+        #template_id = 20
+        #obj_id = config["obj_id"]
+        obj_str = str(int(obj_id)).zfill(6)  # Garantisce che obj_id sia sempre a 6 cifre con zeri iniziali
+
+        image_path2 = f"blender_render/obj_{obj_str}.ply/{str(template_id).zfill(6)}.png"  
         print(template_id)
         #i=(int)(image_path2.split("/")[-1].removesuffix(".png"))
         
@@ -320,7 +326,325 @@ if __name__ == "__main__":
         plt.show()
         #print(config["text_prompt"])
         mask = segmentation(image1_pil,config["text_prompt"])
+        
+        bbox = get_bounding_box_from_mask(mask)
 
+        #print("image1_pil prima crop:",image1_pil.size)
+
+        
+        img_crop, y_offset, x_offset = img_utils.make_quadratic_crop(np.array(image1_pil), bbox)
+
+        #print("imgcrop",img_crop.shape)
+        
+    
+
+        print("y_offset:" ,y_offset)
+        print("x_offset:",x_offset)
+        mask_crop,_,_ = img_utils.make_quadratic_crop(mask, bbox)
+        mask_crop =mask_crop[:,:,0]
+        mask_crop = (mask_crop > 0).astype(np.uint8) * 255  # adesso è 0 o 255
+
+        #print("mask crop", mask_crop.shape)
+
+
+        img_crop = cv2.bitwise_and(img_crop, img_crop, mask=mask_crop)
+        
+        #print("imgcrop size:",img_crop.shape)
+        plt.figure(3)
+        plt.imshow(img_crop)
+        
+        plt.show()
+        # compute point correspondences
+        
+        image_path1="temp/img_crop.png"
+        cv2.imwrite(image_path1,img_crop)
+
+        points1, points2, image1_pil, image2_pil = find_correspondences(image_path1,image_path2,num_pairs=30)
+        print("n_correspondences:",len(points1))
+        #print("image1_pil dopo crop:",image1_pil.size)
+
+        original_size_x,original_size_y= image1_pil.size
+        diag_original = np.sqrt(original_size_x**2+original_size_y**2)
+
+
+        crop_size_x,crop_size_y= img_crop[:,:,0].shape
+        diag_crop = np.sqrt(crop_size_x**2+crop_size_y**2)
+        size_ratio_x = original_size_x/crop_size_x
+        size_ratio_y = original_size_y/crop_size_y
+        scale_ratio = diag_original/diag_crop
+
+        #print("size ratio x:",size_ratio_x)
+        #print("size ratio y:",size_ratio_y)
+        #print("points1:",points1)
+        
+        #print("points2:",points2)
+        draw_correspondences(points1,points2,image1_pil,image2_pil)
+        plt.show()
+        
+        
+        _,y_offset,x_offset=img_utils.make_quadratic_crop(image1_pil_show,bbox)
+        print("y_offset after crop show:" ,y_offset)
+        print("x_offset after crop:",x_offset)
+
+        #print("image1:",image1_pil.size)
+        #print("image2:",image2_pil.size)
+        
+        #i=0
+        obj_str = str(int(obj_id)).zfill(6)
+        nocs_path = f"/home/andrea/Desktop/Thesis_project/nocs/obj_{obj_str}.ply"
+        #nocs_path = "/home/andrea/Desktop/Thesis_project/nocs/obj_000014.ply" #config["mask_path"].replace("/Segmented/mask","/nocs")+"/"+text_prompt+"_"+subfolder_nocs+"_sample"
+        assets_data_type =".png"
+        image_nocs_path = os.path.join(nocs_path, f"{str(template_id).zfill(6)}{assets_data_type}")
+        #print(f'image_nocs path: {image_nocs_path}')
+        img_nocs =cv2.imread(image_nocs_path,cv2.IMREAD_COLOR_RGB)
+        #img_nocs= cv2.resize(img_nocs,(224,224))
+        #img_nocs = cv2.resize(img_nocs, (image2_pil.shape[0], image2_pil.shape[1]))
+        img_nocs = cv2.resize(img_nocs, image2_pil.size)
+        
+        #print("image_nocs" ,img_nocs.shape)
+        
+        assets_data_type= ".png"
+        #print(img2_pixel_matches)
+        features3Dpoint =[]
+        for x,y in points2:
+            x1, y1 = int(y), int(x)  # Convert to int
+            ##print(x)
+            #cv2.circle(img_nocs,(x1,y1), 1, (0, 255, 0), 2)  # (x, y), raggio, colore (BGR), spessore
+            if np.all(img_nocs[y1, x1] == [1, 1, 1]) or np.all(img_nocs[y1, x1] == [0, 0, 0]):
+                x1,y1,new_color = img_utils.find_nearest_non_black_white(img_nocs,x1,y1,3)
+            else:
+                new_color = img_nocs[y1, x1]
+            #features3Dpoint.append(img_nocs[y1,x1])
+            features3Dpoint.append(tuple(map(int, new_color))) #use the color of the match pixel
+
+            ##print(f'posizione {x1,y1} colore: {img_nocs[y1,x1]}')
+            img_nocs[y1,x1]=(255,0,0) #paint the pixel of the match
+
+        plt.figure(5)
+        plt.imshow(img_nocs)
+
+        #plt.show()
+
+        #Converti in array NumPy
+        points1 = np.array(points1)
+
+        #print("y_offset " , y_offset)
+        #print("x_offset: ", x_offset)
+
+        points1[:, 0] = (points1[:, 0] / np.round(scale_ratio)).astype(int)
+        points1[:, 1] = (points1[:, 1] / np.round(scale_ratio)).astype(int)
+        points1[:, 0] += (y_offset ) # Aggiungi l'offset alla prima colonna (x)
+        points1[:, 1] += (x_offset + 10 ) # Aggiungi l'offset alla prima colonna (x)
+        
+        
+        points1[:,[0,1]] = points1[:,[1,0]]
+
+
+        scale_path= config["scale_path"]
+        with open(scale_path, 'r') as f:
+            data = yaml.safe_load(f)
+        scaling_factor=data["scaling_factor"]
+        #print("scaling factor:",scaling_factor)
+        #pc = r3D.image_to_pointCloud(img_nocs)
+        #mesh= r3D.nocs_to_mesh(pc,scaling_factor)
+        #r3D.generate_pointCloud(mesh)
+
+        #obj_id = 14 
+
+        pc = r3D.image_to_pointCloud(img_nocs)
+        mesh= r3D.nocs_to_mesh(pc,scaling_factor)
+        #print("mesh shape",mesh.shape)
+        features_nocs_to_mesh =r3D.features_nocs_to_mesh(features3Dpoint,scaling_factor)
+        feature_point_tuple = [tuple(l) for l in features_nocs_to_mesh]
+        #plt.show()
+
+        r3D.generate_pointCloud(mesh,feature_point_tuple)
+
+        #print(image1_pil_show.size)
+        #print(image1_pil.size)
+        
+        target_size = (image1_pil.size[1],image1_pil.size[0]) 
+        fx = 1066.778
+        fy = 1067.487
+        cx = 312.9869079589844
+        cy = 241.3108977675438
+
+        _,intrinsic=img_utils.input_resize(image1_pil_show,image1_pil.size,intrinsics=[fx, fy, cx, cy])
+        #print("instrinsic:",intrinsic)
+        #clfx,fy,cx,cy=intrinsic
+        #fx,fy,cx,cy=intrinsic
+        cam_K = np.array([[fx,         0,      cx],
+                          [0.0,        fy,     cy],
+                          [0.0,       0.0,    1.0]])
+        
+        # print("new CAm",cam_K)
+        object_points_3D = np.array(features_nocs_to_mesh, dtype=np.float32)
+        image_points_2D = np.array(points1, dtype=np.float32)
+        
+
+
+        #success,rvec,tvec=cv2.solvePnP(object_points_3D, image_points_2D, cam_K, distCoeffs=None)
+        dist_coeffs = np.ones((5, 1)) *0
+        #print(image_points_2D.size)
+       
+        retval, rvec, tvec, inliers = cv2.solvePnPRansac(object_points_3D, image_points_2D, cam_K,distCoeffs=dist_coeffs, iterationsCount=200, reprojectionError=9.0)
+        
+        
+        R, _ = cv2.Rodrigues(rvec)
+        
+        tvec_gt = np.array([94.04884338, -50.48897934, 572.37988281])
+        #tvec=tvec_gt
+        error= np.linalg.norm(tvec-tvec_gt)
+        distance = np.sqrt(np.sum((tvec - tvec_gt)**2))
+        #print("error:",error)
+        print("distance ^2: ", distance)
+        print("R:",R)
+        print("t:",tvec)
+        
+        #json_gt="/home/andrea/Downloads/ycbv_train_pbr/train_pbr/000049/scene_gt.json"
+        json_gt=f"/home/andrea/test_set/ycbv_test_all/test/{folder_str}/scene_gt.json"
+        gt_R,gt_T=js.estrai_parametri(imgId=image_id,json_path=json_gt,target_obj_id=obj_id)
+        print("GtR:",gt_R)
+        print("GtT:",gt_T)
+
+
+        d= img_utils.compute_model_diameter(model_points=object_points_3D)
+        Add , theta,passed= img_utils.compute_add(R_gt=gt_R,T_gt=tvec_gt,R_est=R,T_est=tvec,model_points=object_points_3D)
+
+        print("ADD:",Add)
+        print("% 10  diameter:",(d*0.1))
+        print("theta:", theta)
+        print("passed:",passed)
+
+        adds, theta_deg, d, passed=img_utils.compute_adds_S(R_gt=gt_R,T_gt=tvec_gt,R_est=R,T_est=tvec,model_points=object_points_3D)     
+        print("adds:",adds)
+        print("theta error:",theta_deg)
+        print("passed:",passed)
+
+        '''    
+        if(Add < best_ADD) and (theta<best_theta):
+            best_ADD = Add
+            best_theta = theta
+            best_R = R
+            best_t = tvec
+            best_i = template_id
+        '''
+        #rvec,_=cv2.Rodrigues(best_R)
+        #tvec= best_t
+        #print("best r: ", best_R)
+        #print("best T:", best_t)
+        rvec_gt,_=cv2.Rodrigues(gt_R)
+        tvec_gt = gt_T
+        '''
+        img_utils.draw_projected_3d_bbox(
+        image=image1_pil_show,
+        obj_id=str(obj_id),
+        rvec=rvec,
+        tvec=tvec,
+        camera_matrix=cam_K,
+        dist_coeffs=None,
+        models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json"
+        )
+
+        '''
+        img_utils.draw_projected_3d_bbox_gt(
+        image=image1_pil_show,
+        obj_id=str(obj_id),
+        rvec=rvec,
+        tvec=tvec,
+        rvec_gt=rvec_gt,
+        tvec_gt=tvec_gt,
+        camera_matrix=cam_K,
+        dist_coeffs=None,
+        models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json"
+        )
+        result = {
+        "id_image": id_image,
+        "data": {
+            "GT_R": gt_R,
+            "GT_T": gt_T,
+            "ADD": Add,
+            "ADD_S": adds
+            }
+        }
+        return result
+    
+            
+
+
+
+
+
+
+if __name__ == "__main__":
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=True, help='Path to config YAML file')
+    args = parser.parse_args()
+    config = load_config(args.config)
+
+    with torch.no_grad():
+        obj_id = config["obj_id"]
+        dict_st_result=Estimate_Pose_from_correspondences(id_folder=55,
+                                                          id_image=1,
+                                                          file_type="png",
+                                                          template_id=44,
+                                                          obj_id=obj_id)
+        print(dict_st_result)
+        '''
+        save_dir = "temp"
+        #save_dir.mkdir(exist_ok=True, parents=True)
+
+        
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000302.jpg" #works well
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000083.jpg" #works well
+        id_image = 201
+        id_str = str(int(id_image)).zfill(6)
+        file_type = "jpg"
+        #nocs_path = f"/home/andrea/Desktop/Thesis_project/nocs/obj_{obj_str}.ply" 
+        image_path1 = f"/home/andrea/Desktop/Thesis_project/Inputs/{id_str}.{file_type}"  
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000004.png"  
+
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000106.jpg"
+        
+        image_id =  image_path1.split("/")[-1].removesuffix(".jpg")
+        #image_id =  image_path1.split("/")[-1].removesuffix(".png")
+
+        image_id = int(image_id)
+        image1_pil =Image.open(image_path1).convert('RGB')
+        image1_pil_show = Image.open(image_path1)
+        #plt.imshow(image1_pil_show)
+        #plt.show()
+        #print("image_id:",image_id)
+        #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000305.jpg"
+        #template_id = 20
+        #image_path2 = "blender_render/obj_000014.ply/000020.png"
+        #i=20
+        
+        #best_theta = np.inf
+        #best_ADD = np.inf
+        best_i = 0
+        template_id = 20
+        obj_id = config["obj_id"]
+        obj_str = str(int(obj_id)).zfill(6)  # Garantisce che obj_id sia sempre a 6 cifre con zeri iniziali
+
+        image_path2 = f"blender_render/obj_{obj_str}.ply/{str(template_id).zfill(6)}.png"  
+        print(template_id)
+        #i=(int)(image_path2.split("/")[-1].removesuffix(".png"))
+        
+        
+
+        
+        #image_path2 = "blender_render/obj_000005.ply/000002.png"
+
+
+        image1_pil =Image.open(image_path1).convert('RGB')
+        image1_pil_show = Image.open(image_path1)
+        plt.figure(2)
+        plt.imshow(image1_pil)
+        plt.show()
+        #print(config["text_prompt"])
+        mask = segmentation(image1_pil,config["text_prompt"])
         
         bbox = get_bounding_box_from_mask(mask)
 
@@ -385,7 +709,9 @@ if __name__ == "__main__":
         #print("image2:",image2_pil.size)
         
         #i=0
-        nocs_path = "/home/andrea/Desktop/Thesis_project/nocs/obj_000014.ply" #config["mask_path"].replace("/Segmented/mask","/nocs")+"/"+text_prompt+"_"+subfolder_nocs+"_sample"
+        obj_str = str(int(obj_id)).zfill(6)
+        nocs_path = f"/home/andrea/Desktop/Thesis_project/nocs/obj_{obj_str}.ply"
+        #nocs_path = "/home/andrea/Desktop/Thesis_project/nocs/obj_000014.ply" #config["mask_path"].replace("/Segmented/mask","/nocs")+"/"+text_prompt+"_"+subfolder_nocs+"_sample"
         assets_data_type =".png"
         image_nocs_path = os.path.join(nocs_path, f"{str(template_id).zfill(6)}{assets_data_type}")
         #print(f'image_nocs path: {image_nocs_path}')
@@ -442,7 +768,7 @@ if __name__ == "__main__":
         #mesh= r3D.nocs_to_mesh(pc,scaling_factor)
         #r3D.generate_pointCloud(mesh)
 
-        obj_id = 14 
+        #obj_id = 14 
 
         pc = r3D.image_to_pointCloud(img_nocs)
         mesh= r3D.nocs_to_mesh(pc,scaling_factor)
@@ -513,21 +839,21 @@ if __name__ == "__main__":
         print("theta error:",theta_deg)
         print("passed:",passed)
 
-        '''    
+            
         if(Add < best_ADD) and (theta<best_theta):
             best_ADD = Add
             best_theta = theta
             best_R = R
             best_t = tvec
             best_i = template_id
-        '''
+        
         #rvec,_=cv2.Rodrigues(best_R)
         #tvec= best_t
         #print("best r: ", best_R)
         #print("best T:", best_t)
         rvec_gt,_=cv2.Rodrigues(gt_R)
         tvec_gt = gt_T
-        '''
+       
         img_utils.draw_projected_3d_bbox(
         image=image1_pil_show,
         obj_id=str(obj_id),
@@ -538,7 +864,7 @@ if __name__ == "__main__":
         models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json"
         )
 
-        '''
+        
         img_utils.draw_projected_3d_bbox_gt(
         image=image1_pil_show,
         obj_id=str(obj_id),
@@ -551,5 +877,5 @@ if __name__ == "__main__":
         models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json"
         )
             
-            
+        '''    
 

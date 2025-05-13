@@ -3,6 +3,7 @@ cam2Pos_path: /home/andrea/Desktop/Thesis_project/config/obj_000001_cam2Pos.yaml
 image_path: /home/andrea/Desktop/Thesis_project/Inputs/000201.jpg
 mask_path: /home/andrea/Desktop/Thesis_project/Segmented/mask
 model_path: /home/andrea/Desktop/Thesis_project/Models
+obj_id: 1
 scale_path: /home/andrea/Desktop/Thesis_project/config/obj_000001_scale.yaml
 segmentation_path: /home/andrea/Desktop/Thesis_project/Segmented/rgb
-text_prompt: tin can
+text_prompt: master chef can

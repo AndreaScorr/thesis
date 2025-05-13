@@ -74,7 +74,10 @@ args = parser.parse_args()
 
 config = load_config(args.config)
 
-obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000014.ply" #config["glb_path"]
+obj_id= config["obj_id"]
+obj_filename = f"obj_{int(obj_id):06d}.ply"
+obj_path = f"/home/andrea/Desktop/Thesis_project/Models/{obj_filename}"
+#obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000001.ply" #config["glb_path"]
 name_file = obj_path.split("/")[-1]
 name_file = name_file.removesuffix('.glb')
 name_file = name_file.removesuffix('.ply')

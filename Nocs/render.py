@@ -62,8 +62,10 @@ parser.add_argument('--config', type=str, required=True, help='Path to config YA
 args = parser.parse_args()
 
 config = load_config(args.config)
-
-obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000014.ply" #config["glb_path"]
+obj_id= config["obj_id"]
+obj_filename = f"obj_{int(obj_id):06d}.ply"
+obj_path = f"/home/andrea/Desktop/Thesis_project/Models/{obj_filename}"
+#obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000014.ply" #config["glb_path"]
 
 #load the object
 objs = bproc.loader.load_obj(obj_path)
