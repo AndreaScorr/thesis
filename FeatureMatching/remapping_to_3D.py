@@ -7,6 +7,7 @@ import yaml
 
 import open3d as o3d
 import open3d.core as o3c
+import ImageUtils as IU
 
 import os
 def image_to_pointCloud(img):
@@ -60,7 +61,7 @@ def image_to_pointCloud(img):
 
 
 
-def nocs_to_mesh(points, scaling_factor):
+def nocs_to_mesh(points, scaling_factor,obj_id):
 
     "convert normalized object coordinate space to  mesh"
     mesh = []
@@ -69,8 +70,8 @@ def nocs_to_mesh(points, scaling_factor):
     with open(models_info_path, "r") as f:
         models_info = json.load(f)
 
-  
-
+    #scaling_factor=IU.compute_model_diameter(None,obj_id,models_info_path=models_info_path)
+    
     for i in range(points.shape[0]):
         x = points[i, 0]
         y = points[i, 1]
@@ -97,7 +98,7 @@ def nocs_to_mesh(points, scaling_factor):
     return np.array(mesh)
 
 
-def features_nocs_to_mesh(points, scaling_factor):
+def features_nocs_to_mesh(points, scaling_factor,obj_id):
 
     "convert normalized object coordinate space to  mesh"
     mesh = []
@@ -106,7 +107,7 @@ def features_nocs_to_mesh(points, scaling_factor):
     with open(models_info_path, "r") as f:
         models_info = json.load(f)
 
-
+    #scaling_factor=IU.compute_model_diameter(None,obj_id,models_info_path=models_info_path)
 
     for i in range(len(points)):
         x = points[i][0]
@@ -182,18 +183,20 @@ def generate_pointCloud(mesh,list_point):
     center = bbox.get_center().cpu().numpy()
 
     # **Visualizzazione**
-    o3d.visualization.draw_geometries(
-        [pcd.to_legacy(), picked_point_cloud],
-        zoom=0.3412,
-        front=[0, 0, -1],
-        lookat=center,
-        up=[0, -1, 0]
-    )
+    #o3d.visualization.draw_geometries([pcd.to_legacy(), picked_point_cloud],zoom=0.3412,front=[0, 0, -1],lookat=center,up=[0, -1, 0])
 
+
+
+def load_mesh_points(path_to_mesh):
+    mesh = o3d.io.read_triangle_mesh(path_to_mesh)
+    mesh.remove_duplicated_vertices()  # opzionale
+    mesh.remove_unreferenced_vertices()  # opzionale
+    return np.asarray(mesh.vertices)
 
 
 
 '''
+
 #folder_path ="nocs/albero"
 #folder_path ="nocs/tennis"
 folder_path="nocs/basketball"

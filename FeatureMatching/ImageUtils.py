@@ -1,13 +1,6 @@
-
-
-
-
-
-
-
-
 import cv2
 import numpy as np
+from scipy import spatial
 import torch
 import argparse
 import json
@@ -292,7 +285,7 @@ def draw_projected_3d_bbox(image, obj_id, rvec, tvec, camera_matrix, dist_coeffs
     plt.axis("off")
     plt.show()
 
-def draw_projected_3d_bbox_gt(image, obj_id, rvec, tvec, rvec_gt, tvec_gt, camera_matrix, dist_coeffs, models_info_path):
+def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_gt, camera_matrix, dist_coeffs, models_info_path):
     
    # Definisci la bounding box normalizzata [0, 1] nel frame dell’oggetto
     bbox_3D = np.array([
@@ -356,7 +349,7 @@ def draw_projected_3d_bbox_gt(image, obj_id, rvec, tvec, rvec_gt, tvec_gt, camer
         except Exception:
             continue
 
-        cv2.line(image, pt1, pt2, color=(255, 255, 0), thickness=2)
+        cv2.line(image, pt1, pt2, color=(255, 0, 0), thickness=2)
     
     
     # Proiezione nel piano immagine
@@ -398,12 +391,23 @@ def draw_projected_3d_bbox_gt(image, obj_id, rvec, tvec, rvec_gt, tvec_gt, camer
 
         cv2.line(image, pt1, pt2, color=(0, 255, 0), thickness=2)
 
+
+    output_dir = "temp"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Percorso completo del file da salvare
+    output_path = os.path.join(output_dir, f"output_image_{image_id}_obj{obj_id}.png")
     # Mostra il risultato
     plt.figure(figsize=(10, 8))
     plt.imshow(image)
-    plt.title(f"3D Bounding Box Projection - Object {obj_id}")
+    plt.title(f"Image {image_id} 3D Bounding Box Projection - Object {obj_id}")
+    #plt.savefig(output_path, bbox_inches='tight')
+
     plt.axis("off")
-    plt.show()
+    #plt.show()
+    plt.show(block=False)     # Mostra senza bloccare l'esecuzione
+    plt.pause(5)              # Attende 3 secondi
+    plt.close()               # Chiude la finestra del plot
 
 
 def input_resize(image, target_size, intrinsics):
@@ -431,44 +435,7 @@ def input_resize(image, target_size, intrinsics):
 
     return image, intrinsics
 
-def transform_pts_Rt(pts, R, t):
-    """Applies a rigid transformation to 3D points.
 
-    :param pts: nx3 ndarray with 3D points.
-    :param R: 3x3 rotation matrix.
-    :param t: 3x1 translation vector.
-    :return: nx3 ndarray with transformed 3D points.
-    """
-    assert pts.shape[1] == 3
-    pts_t = R.dot(pts.T) + t.reshape((3, 1))
-    return pts_t.T
-
-
-def add(pts,R_gt, T_gt, R_est, T_est,models_info_path,obj_id):
-    with open(models_info_path, "r") as f:
-        models_info = json.load(f)
-    center_dist = np.linalg.norm(T_est - T_gt)
-    spheres_overlap = center_dist < models_info[str(obj_id)]["diameter"]
-
-
-    pts_est = transform_pts_Rt(pts, R_est, T_est)
-    pts_gt = transform_pts_Rt(pts, R_gt, T_gt)
-    e = np.linalg.norm(pts_est - pts_gt, axis=1).mean()
-    return e
-
-
-def compute_model_diameter(model_points):
-    """
-    Calcola il diametro del modello, cioè la massima distanza tra tutte le coppie di punti.
-
-    Parametri:
-    - model_points: array (N, 3) dei punti del modello
-
-    Ritorna:
-    - diametro (float)
-    """
-    distances = cdist(model_points, model_points)  # (N, N)
-    return np.max(distances)
 '''
 def compute_add(R_gt, T_gt, R_est, T_est, model_points):
     """

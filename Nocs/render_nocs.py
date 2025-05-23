@@ -274,8 +274,12 @@ for pos in camera_positions:
     can2world_matrix_array.append(cam2world_matrix)
     bproc.camera.add_camera_pose(cam2world_matrix)
 '''
+
+'''
 def icosahedron_coords_with_orientations(num_views, rotations_per_view=4, radius=2):
     phi = (1 + np.sqrt(5)) / 2
+    phi_noise_std = 0.2
+    phi += np.random.normal(0, phi_noise_std)  # Add Gaussian noise to phi
 
     verts = np.array([
         (-1,  phi, 0), (1,  phi, 0), (-1, -phi, 0), (1, -phi, 0),
@@ -316,8 +320,39 @@ def icosahedron_coords_with_orientations(num_views, rotations_per_view=4, radius
 
 camera_positions, roll_angles = icosahedron_coords_with_orientations(
     num_views, rotations_per_view=4, radius=(scaling_factor + 50)
-)
+)'''
 
+def fibonacci_sphere_sampling(num_points, radius=2.0):
+    points = []
+    offset = 2.0 / num_points
+    increment = np.pi * (3.0 - np.sqrt(5))  # golden angle
+
+    for i in range(num_points):
+        y = ((i * offset) - 1) + (offset / 2)
+        r = np.sqrt(1 - y*y)
+        phi = i * increment
+
+        x = np.cos(phi) * r
+        z = np.sin(phi) * r
+        points.append((radius * x, radius * y, radius * z))
+    return points
+
+def sphere_coords_with_orientations(num_views, rotations_per_view=4, radius=2):
+    coords = fibonacci_sphere_sampling(num_views, radius)
+    camera_positions = []
+    roll_angles = []
+
+    for coord in coords:
+        for i in range(rotations_per_view):
+            angle = (2 * np.pi * i) / rotations_per_view
+            camera_positions.append(coord)
+            roll_angles.append(angle)
+
+    return camera_positions, roll_angles
+
+camera_positions, roll_angles = sphere_coords_with_orientations(
+    num_views=200, rotations_per_view=1, radius=scaling_factor + 50
+)
 can2world_matrix_array = []
 
 for pos, roll in zip(camera_positions, roll_angles):
