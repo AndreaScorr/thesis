@@ -149,7 +149,7 @@ def rotation_error(R1, R2):
     theta_deg = np.degrees(theta_rad)
     return theta_deg
 
-def compute_add_and_addS(folder, id_image, pts3d, diameter, R_gt, t_gt, R_pred, t_pred, percentage=0.1):
+def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R_pred, t_pred, percentage=0.1):
     Add = compute_add_score_single(pts3d, diameter, R_gt, t_gt, R_pred, t_pred)    
     Add_S = compute_adds_score(pts3d, diameter, R_gt, t_gt, R_pred, t_pred)
     theta= rotation_error(R_gt,R_pred)
@@ -167,8 +167,11 @@ def compute_add_and_addS(folder, id_image, pts3d, diameter, R_gt, t_gt, R_pred, 
             "ADD_S": Add_S
         }
     }
-    json_path = f"results_{str(int(folder)).zfill(6)}.jsonl"  # estensione .jsonl per NDJSON
+    obj_id_folder = str(int(obj_id)).zfill(6)
+    
+    os.makedirs(f"/home/andrea/Desktop/Thesis_project/temp/{obj_id_folder}", exist_ok=True)
 
+    json_path = f"/home/andrea/Desktop/Thesis_project/evaluation/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.jsonl"
     # Scrivi in append, una riga = un oggetto JSON compatto
     with open(json_path, "a") as f:
         f.write(json.dumps(result, separators=(',', ':')) + "\n")

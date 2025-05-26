@@ -643,6 +643,7 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         
         Add,AddS = Eval.compute_add_and_addS(folder=id_folder,
                                             id_image=image_id,
+                                            obj_id=obj_id,
                                             pts3d=points_eval,
                                             diameter=d,
                                             R_gt=gt_R,
@@ -722,7 +723,7 @@ if __name__ == "__main__":
     with torch.no_grad():
         obj_id = config["obj_id"]
         best=[]
-        for id_image in range(27,100):
+        for id_image in range(1,3):
         #id_image=8
             try:
                 dict_st_result=Estimate_Pose_from_correspondences(id_folder=48,
