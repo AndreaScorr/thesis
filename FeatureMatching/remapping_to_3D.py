@@ -71,7 +71,8 @@ def nocs_to_mesh(points, scaling_factor,obj_id):
         models_info = json.load(f)
 
     #scaling_factor=IU.compute_model_diameter(None,obj_id,models_info_path=models_info_path)
-    
+    #scaling_factor =models_info[str(obj_id)]["diameter"]*10 
+    print("scaling factor",scaling_factor)
     for i in range(points.shape[0]):
         x = points[i, 0]
         y = points[i, 1]
@@ -108,7 +109,7 @@ def features_nocs_to_mesh(points, scaling_factor,obj_id):
         models_info = json.load(f)
 
     #scaling_factor=IU.compute_model_diameter(None,obj_id,models_info_path=models_info_path)
-
+    #scaling_factor =models_info[str(obj_id)]["diameter"]*10 
     for i in range(len(points)):
         x = points[i][0]
         y = points[i][1]

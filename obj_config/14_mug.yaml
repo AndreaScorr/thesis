@@ -5,8 +5,8 @@ glb_path: /home/andrea/Desktop/Thesis_project/Models/cup_000547_sample.glb
 image_path: /home/andrea/Desktop/Thesis_project/Inputs/000114.jpg
 mask_path: /home/andrea/Desktop/Thesis_project/Segmented/mask
 model_path: /home/andrea/Desktop/Thesis_project/Models
+obj_id: 14
 ply_path: /home/andrea/Desktop/Thesis_project/Models/cup_000547_sample.ply
 scale_path: /home/andrea/Desktop/Thesis_project/config/obj_000014_scale.yaml
 segmentation_path: /home/andrea/Desktop/Thesis_project/Segmented/rgb
 text_prompt: red mug
-obj_id: 14

@@ -351,7 +351,7 @@ def sphere_coords_with_orientations(num_views, rotations_per_view=4, radius=2):
     return camera_positions, roll_angles
 
 camera_positions, roll_angles = sphere_coords_with_orientations(
-    num_views=200, rotations_per_view=1, radius=scaling_factor + 50
+    num_views=200, rotations_per_view=1, radius=scaling_factor + 80
 )
 can2world_matrix_array = []
 

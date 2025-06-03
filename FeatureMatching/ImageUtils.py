@@ -406,7 +406,7 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
     plt.axis("off")
     #plt.show()
     plt.show(block=False)     # Mostra senza bloccare l'esecuzione
-    plt.pause(5)              # Attende 3 secondi
+    plt.pause(1)              # Attende 3 secondi
     plt.close()               # Chiude la finestra del plot
 
 

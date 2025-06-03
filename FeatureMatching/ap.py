@@ -1,6 +1,6 @@
 import Evaluation_utils as Eval
 
-file_path = "/home/andrea/Desktop/Thesis_project/results_000049.jsonl"
+file_path = "/home/andrea/Desktop/Thesis_project/evaluation/000013/results_000053.jsonl"
 Eval.plot_ap_curve_single_class(file_path,mode="rotation")
 Eval.plot_ap_curve_single_class(file_path,mode="translation")
 results = Eval.load_jsonl(file_path)

@@ -169,7 +169,7 @@ def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R
     }
     obj_id_folder = str(int(obj_id)).zfill(6)
     
-    os.makedirs(f"/home/andrea/Desktop/Thesis_project/temp/{obj_id_folder}", exist_ok=True)
+    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/{obj_id_folder}", exist_ok=True)
 
     json_path = f"/home/andrea/Desktop/Thesis_project/evaluation/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.jsonl"
     # Scrivi in append, una riga = un oggetto JSON compatto
