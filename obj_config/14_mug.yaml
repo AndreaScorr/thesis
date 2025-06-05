@@ -2,7 +2,7 @@ blender_render_mask_path: /home/andrea/Desktop/Thesis_project/blender_render/obj
 blender_render_path: /home/andrea/Desktop/Thesis_project/blender_render/obj_000014.ply
 cam2Pos_path: /home/andrea/Desktop/Thesis_project/config/obj_000014_cam2Pos.yaml
 glb_path: /home/andrea/Desktop/Thesis_project/Models/cup_000547_sample.glb
-image_path: /home/andrea/Desktop/Thesis_project/Inputs/000114.jpg
+image_path: /home/andrea/test_set/ycbv_test_all/test/000048/rgb/000001.png
 mask_path: /home/andrea/Desktop/Thesis_project/Segmented/mask
 model_path: /home/andrea/Desktop/Thesis_project/Models
 obj_id: 14

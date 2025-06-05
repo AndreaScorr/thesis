@@ -348,6 +348,30 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
             pt2 = tuple(int(round(float(x))) for x in pt2_raw[:2])
         except Exception:
             continue
+        
+        axis_length = max(size_x, size_y, size_z) * 0.5
+        
+        axes = np.float32([
+            [0, 0, 0],                   # origine
+            [axis_length, 0, 0],         # X
+            [0, axis_length, 0],         # Y
+            [0, 0, axis_length]          # Z
+        ])
+
+        axes_2D, _ = cv2.projectPoints(axes, rvec, tvec, camera_matrix, dist_coeffs)
+        axes_2D = axes_2D.reshape(-1, 2)
+
+        origin = tuple(axes_2D[0].astype(int))
+        x_axis = tuple(axes_2D[1].astype(int))
+        y_axis = tuple(axes_2D[2].astype(int))
+        z_axis = tuple(axes_2D[3].astype(int))
+
+        cv2.line(image, origin, x_axis, (0, 0, 255), 3)   # X - rosso
+        cv2.line(image, origin, y_axis, (0, 255, 0), 3)   # Y - verde
+        cv2.line(image, origin, z_axis, (255, 0, 0), 3)   # Z - blu
+                
+
+
 
         cv2.line(image, pt1, pt2, color=(255, 0, 0), thickness=2)
     
@@ -389,6 +413,29 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
         except Exception:
             continue
 
+        axis_length = max(size_x, size_y, size_z) * 0.5
+        axes = np.float32([
+            [0, 0, 0],                   # origine
+            [axis_length, 0, 0],         # X
+            [0, axis_length, 0],         # Y
+            [0, 0, axis_length]          # Z
+        ])
+
+        axes_2D, _ = cv2.projectPoints(axes, rvec_gt, tvec_gt, camera_matrix, dist_coeffs)
+        axes_2D = axes_2D.reshape(-1, 2)
+
+        origin = tuple(axes_2D[0].astype(int))
+        x_axis = tuple(axes_2D[1].astype(int))
+        y_axis = tuple(axes_2D[2].astype(int))
+        z_axis = tuple(axes_2D[3].astype(int))
+        
+        
+        
+        cv2.line(image, origin, x_axis, (0, 0, 255), 3)   # X - rosso
+        cv2.line(image, origin, y_axis, (0, 255, 0), 3)   # Y - verde
+        cv2.line(image, origin, z_axis, (255, 5, 0), 3)   # Z - blu
+        
+
         cv2.line(image, pt1, pt2, color=(0, 255, 0), thickness=2)
 
 
@@ -401,7 +448,7 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
     plt.figure(figsize=(10, 8))
     plt.imshow(image)
     plt.title(f"Image {image_id} 3D Bounding Box Projection - Object {obj_id}")
-    #plt.savefig(output_path, bbox_inches='tight')
+    plt.savefig(output_path, bbox_inches='tight')
 
     plt.axis("off")
     #plt.show()

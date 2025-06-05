@@ -649,7 +649,11 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
                                             t_pred=tvec)'''
         
         
+        addd=Eval.add(pts=points_eval,R_gt=gt_R,T_gt=gt_T,R_est=R,T_est=tvec, obj_id=obj_id,diameter=d)
         
+        adi = Eval.adi(R_est=R,t_est=tvec,R_gt=gt_R,t_gt=gt_T,pts=points_eval,diameter=d)
+        print("add score tessa:",addd)
+        print("add-s score:",adi)
         
         Add,AddS = Eval.compute_add_and_addS(folder=id_folder,
                                             id_image=image_id,
@@ -660,6 +664,16 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
                                             t_gt=gt_T,
                                             R_pred=R,
                                             t_pred=tvec)
+        '''
+        Add,AddS=Eval.compute_add_and_addS_T(folder=id_folder,
+                                            id_image=image_id,
+                                            obj_id=obj_id,
+                                            pts3d=points_eval,
+                                            diameter=d,
+                                            R_gt=gt_R,
+                                            t_gt=gt_T,
+                                            R_pred=R,
+                                            t_pred=tvec)'''
         print("ADD:",Add)
         #print("% 1  diameter:",(d*0.01))
         #print("theta:", theta)
@@ -733,14 +747,24 @@ if __name__ == "__main__":
     with torch.no_grad():
         obj_id = config["obj_id"]
         best=[]
-        best_template_id = [180]
-        for id_image in range(10,100):
+        best_template_id = [17]
+
+        # Load JSON file
+        id_folder=48
+        folder_str = str(int(id_folder)).zfill(6) 
+        json_path= f"/home/andrea/Desktop/test_set/ycbv_test_bop19/test/{folder_str}/scene_gt.json"
+        with open(json_path, 'r') as f:
+            data = json.load(f)
+        ids = list(map(int, data.keys()))
+        print(ids)
+        '''
+        for id_image in range(1,2):
             for template_id in best_template_id:
             #id_image=8
                 try:
                     print("template",template_id)
 
-                    dict_st_result=Estimate_Pose_from_correspondences(id_folder=56,
+                    dict_st_result=Estimate_Pose_from_correspondences(id_folder=48,
                                                                     id_image=id_image,
                                                                     file_type="png",
                                                                     template_id=template_id,
@@ -751,4 +775,4 @@ if __name__ == "__main__":
                     print(dict_st_result)
                 except:
                     continue
-        print(best)
+        print(best)'''

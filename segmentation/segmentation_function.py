@@ -22,9 +22,10 @@ def segmentation(image_path , mask_path , mask_file_name, segmentation_path, seg
     results = model.predict([image_pil], [text_prompt])
 
     #extract the mask
-    mask = results[0]["masks"][1]
+    mask = results[0]["masks"]#[1]
 
-
+    folder_id = image_path.split("/")[-3].replace("0","")
+    print(folder_id)
     # Convert to numpy array
     image_np = np.array(image_pil)  # (H, W, 3)
     mask_np = np.array(mask).astype(np.uint8).squeeze()  # (H, W)
@@ -66,10 +67,11 @@ segmentation_path = config["segmentation_path"]
 
 text_prompt = config["text_prompt"]
 
+obj_id = config["obj_id"]
 mask_file_name = text_prompt+ "_"+image_path.split("/")[-1]
-segmentation_file_name = text_prompt+ "_"+image_path.split("/")[-1]
-
-
+#segmentation_file_name = text_prompt+ "_"+image_path.split("/")[-1]
+obj_str = str(int(obj_id)).zfill(6) 
+segmentation_file_name = text_prompt+ "_"+obj_str
 print(config)
 
 '''
