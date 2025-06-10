@@ -255,9 +255,10 @@ def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R
     #with open(json_path, "a") as f:
     #    f.write(json.dumps(result, separators=(',', ':')) + "\n")
 
-    csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.csv"
-    
-    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{obj_id_folder}", exist_ok=True)
+    #csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.csv"
+    csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/andrea_ycbv-test.csv"
+
+    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/csv", exist_ok=True)
     save_pose_result(csv_path=csv_path,
                      scene_id=folder,
                      im_id=id_image,

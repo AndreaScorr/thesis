@@ -448,13 +448,13 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
     plt.figure(figsize=(10, 8))
     plt.imshow(image)
     plt.title(f"Image {image_id} 3D Bounding Box Projection - Object {obj_id}")
-    plt.savefig(output_path, bbox_inches='tight')
+    #plt.savefig(output_path, bbox_inches='tight')
 
     plt.axis("off")
-    #plt.show()
-    plt.show(block=False)     # Mostra senza bloccare l'esecuzione
-    plt.pause(1)              # Attende 3 secondi
-    plt.close()               # Chiude la finestra del plot
+    plt.show()
+    #plt.show(block=False)     # Mostra senza bloccare l'esecuzione
+    #plt.pause(1)              # Attende 3 secondi
+    #plt.close()               # Chiude la finestra del plot
 
 
 def input_resize(image, target_size, intrinsics):

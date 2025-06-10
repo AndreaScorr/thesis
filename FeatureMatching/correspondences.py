@@ -250,8 +250,8 @@ def segmentation_from_file(id_folder,id_image,obj_id):
     obj_id = remap
 
     obj_str = str(int(obj_id)).zfill(6)
-    path=f"/home/andrea/test_set/ycbv_test_all/test/{folder_str}/mask_visib/{id_str}_{obj_str}.png"
-    
+    #path=f"/home/andrea/test_set/ycbv_test_all/test/{folder_str}/mask_visib/{id_str}_{obj_str}.png"
+    path= f"/home/andrea/test_set/ycbv_test_all/ycbv/test/{folder_str}/mask_visib/{id_str}_{obj_str}.png"
     # Leggi l'immagine
     mask_np = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     
@@ -329,10 +329,8 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         
         #file_type = "jpg"
 
-        #nocs_path = f"/home/andrea/Desktop/Thesis_project/nocs/obj_{obj_str}.ply" 
-        #image_path1 = f"/home/andrea/Desktop/Thesis_project/Inputs/{id_str}.{file_type}"  
-        image_path1 = f"/home/andrea/test_set/ycbv_test_all/test/{folder_str}/rgb/{id_str}.{file_type}"  
-
+        #image_path1 = f"/home/andrea/test_set/ycbv_test_all/test/{folder_str}/rgb/{id_str}.{file_type}"  
+        image_path1 = f"/home/andrea/test_set/ycbv_test_all/ycbv/test/{folder_str}/rgb/{id_str}.{file_type}"
         #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000106.jpg"
         
         image_id =  image_path1.split("/")[-1].removesuffix(f".{file_type}")
@@ -611,7 +609,9 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         print("t:",tvec)
         
         #json_gt="/home/andrea/Downloads/ycbv_train_pbr/train_pbr/000049/scene_gt.json"
-        json_gt=f"/home/andrea/test_set/ycbv_test_all/test/{folder_str}/scene_gt.json"
+        #json_gt=f"/home/andrea/test_set/ycbv_test_all/test/{folder_str}/scene_gt.json"
+        
+        json_gt=f"/home/andrea/Desktop/test_set/ycbv_test_bop19/test/{folder_str}/scene_gt.json"
         gt_R,gt_T=js.estrai_parametri(imgId=image_id,json_path=json_gt,target_obj_id=obj_id)
         gt_T =np.asarray(gt_T).reshape(-1)
         distance = np.sqrt(np.sum((tvec - gt_T)**2))
@@ -757,14 +757,16 @@ if __name__ == "__main__":
             data = json.load(f)
         ids = list(map(int, data.keys()))
         print(ids)
-        '''
-        for id_image in range(1,2):
+        
+#        for id_image in range(1,2):
+        for id_image in ids[:10]:
+
             for template_id in best_template_id:
             #id_image=8
                 try:
                     print("template",template_id)
 
-                    dict_st_result=Estimate_Pose_from_correspondences(id_folder=48,
+                    dict_st_result=Estimate_Pose_from_correspondences(id_folder=id_folder,
                                                                     id_image=id_image,
                                                                     file_type="png",
                                                                     template_id=template_id,
@@ -775,4 +777,4 @@ if __name__ == "__main__":
                     print(dict_st_result)
                 except:
                     continue
-        print(best)'''
+        print(best)
