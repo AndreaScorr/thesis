@@ -365,15 +365,17 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
         x_axis = tuple(axes_2D[1].astype(int))
         y_axis = tuple(axes_2D[2].astype(int))
         z_axis = tuple(axes_2D[3].astype(int))
+        try:
+            cv2.line(image, origin, x_axis, (0, 0, 255), 3)   # X - rosso
+            cv2.line(image, origin, y_axis, (0, 255, 0), 3)   # Y - verde
+            cv2.line(image, origin, z_axis, (255, 0, 0), 3)   # Z - blu
+                    
 
-        cv2.line(image, origin, x_axis, (0, 0, 255), 3)   # X - rosso
-        cv2.line(image, origin, y_axis, (0, 255, 0), 3)   # Y - verde
-        cv2.line(image, origin, z_axis, (255, 0, 0), 3)   # Z - blu
-                
 
 
-
-        cv2.line(image, pt1, pt2, color=(255, 0, 0), thickness=2)
+            cv2.line(image, pt1, pt2, color=(255, 0, 0), thickness=2)
+        except:
+            continue
     
     
     # Proiezione nel piano immagine
@@ -451,10 +453,10 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
     #plt.savefig(output_path, bbox_inches='tight')
 
     plt.axis("off")
-    plt.show()
-    #plt.show(block=False)     # Mostra senza bloccare l'esecuzione
-    #plt.pause(1)              # Attende 3 secondi
-    #plt.close()               # Chiude la finestra del plot
+    #plt.show()
+    plt.show(block=False)     # Mostra senza bloccare l'esecuzione
+    plt.pause(1)              # Attende 3 secondi
+    plt.close()               # Chiude la finestra del plot
 
 
 def input_resize(image, target_size, intrinsics):

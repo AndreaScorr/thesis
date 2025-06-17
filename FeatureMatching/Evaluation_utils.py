@@ -56,9 +56,9 @@ def add(pts,R_gt, T_gt, R_est, T_est,obj_id,diameter,percentage=0.1):
     #print("err:",e)
     #return e
     threshold = diameter * percentage
-    print("diameter",diameter)
-    print("mean distance:",e)
-    print("threshol",threshold)
+    #print("diameter",diameter)
+    #print("mean distance:",e)
+    #print("threshol",threshold)
     # Score binario
     score = 1 if e < threshold else 0
     return score
@@ -82,9 +82,9 @@ def compute_add_score_single(pts3d, diameter, R_gt, t_gt, R_pred, t_pred , perce
     #diameter = diameter/1000
     # Soglia
     threshold = diameter * percentage
-    print("diameter",diameter)
-    print("mean distance:",mean_distance)
-    print("threshol",threshold)
+    #print("diameter",diameter)
+    #print("mean distance:",mean_distance)
+    #print("threshol",threshold)
     # Score binario
     score = 1 if mean_distance < threshold else 0
     return score
@@ -102,7 +102,7 @@ def compute_adds_score(pts3d, diameter, R_gt, t_gt, R_pred, t_pred, percentage=0
     if np.isnan(np.sum(t_pred)):
         return 0
 
-    print("diameter:",diameter)
+    #print("diameter:",diameter)
     # Trasformazione dei punti
     pts_xformed_gt = R_gt @ pts3d.T + t_gt.reshape(3, 1)
     pts_xformed_pred = R_pred @ pts3d.T + t_pred.reshape(3, 1)
@@ -111,7 +111,7 @@ def compute_adds_score(pts3d, diameter, R_gt, t_gt, R_pred, t_pred, percentage=0
     kdt = KDTree(pts_xformed_gt.T, metric='euclidean')
     distance, _ = kdt.query(pts_xformed_pred.T, k=1)
     mean_distance = np.mean(distance)
-    print("mean_distance adds:",mean_distance)
+    #print("mean_distance adds:",mean_distance)
     # Soglia e score binario
     threshold = diameter * percentage
     score = 1 if mean_distance < threshold else 0
@@ -161,9 +161,9 @@ def adi(R_est, t_est, R_gt, t_gt, pts,diameter,percentage=0.1):
     e = nn_dists.mean()
     #return e
     threshold = diameter * percentage
-    print("diameter",diameter)
-    print("mean distance:",e)
-    print("threshol",threshold)
+    #print("diameter",diameter)
+    #print("mean distance:",e)
+    #print("threshol",threshold)
     # Score binario
     score = 1 if e < threshold else 0
     return score
@@ -228,7 +228,7 @@ def save_pose_result(csv_path, scene_id, im_id, obj_id, score, R, t, time_taken)
 
 
 
-def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R_pred, t_pred, percentage=0.1):
+def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R_pred, t_pred,best_template_id, percentage=0.1):
     Add = compute_add_score_single(pts3d, diameter, R_gt, t_gt, R_pred, t_pred)    
     Add_S = compute_adds_score(pts3d, diameter, R_gt, t_gt, R_pred, t_pred)
     theta= rotation_error(R_gt,R_pred)
@@ -236,6 +236,7 @@ def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R
     result = {
         "id_image": id_image,
         "data": {
+            "Best_template_id": best_template_id,
             "GT_R": R_gt.flatten().tolist(),
             "GT_T": t_gt.flatten().tolist(),
             "R_pred": R_pred.flatten().tolist(),
@@ -252,12 +253,13 @@ def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R
 
     json_path = f"/home/andrea/Desktop/Thesis_project/evaluation/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.jsonl"
     # Scrivi in append, una riga = un oggetto JSON compatto
-    #with open(json_path, "a") as f:
-    #    f.write(json.dumps(result, separators=(',', ':')) + "\n")
+    with open(json_path, "a") as f:
+        f.write(json.dumps(result, separators=(',', ':')) + "\n")
 
     #csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.csv"
     csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/andrea_ycbv-test.csv"
 
+    
     os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/csv", exist_ok=True)
     save_pose_result(csv_path=csv_path,
                      scene_id=folder,

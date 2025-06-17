@@ -12,11 +12,11 @@ import os
 if "BOP_PATH" in os.environ:
     datasets_path = os.environ["BOP_PATH"]
 else:
-    datasets_path = r"/home/andrea/test_set/ycbv_test_all"
-
+    #datasets_path = r"/home/andrea/test_set/ycbv_test_all"
+    datasets_path = r"/home/andrea/Desktop/test_set/ycbv_test_bop19"
 # Folder with pose results to be evaluated.
-results_path = r"/home/andrea/Desktop/Thesis_project/evaluation/csv/000014"
-
+#results_path = r"/home/andrea/Desktop/Thesis_project/evaluation/csv/000014"
+results_path = r"/home/andrea/Desktop/Thesis_project/evaluation/csv"
 # Folder for the calculated pose errors and performance scores.
 eval_path = r"/home/andrea/Desktop/Thesis_project/temp"
 
