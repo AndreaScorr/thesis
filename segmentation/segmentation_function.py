@@ -28,7 +28,13 @@ def segmentation(image_path , mask_path , mask_file_name, segmentation_path, seg
     print(folder_id)
     # Convert to numpy array
     image_np = np.array(image_pil)  # (H, W, 3)
+   
+
     mask_np = np.array(mask).astype(np.uint8).squeeze()  # (H, W)
+    if mask_np.ndim == 3:
+        mask_np = mask_np[0]
+    elif mask_np.ndim == 2:
+        mask_np = mask_np
 
     os.makedirs(mask_path, exist_ok=True)
     mask_path = os.path.join(mask_path, mask_file_name)
@@ -58,20 +64,25 @@ parser.add_argument('--config', type=str, required=True, help='Path to config YA
 args = parser.parse_args()
 
 config = load_config(args.config)
+id_image = 2119
+id_image_str=(str(id_image).zfill(6))
 
-image_path=config["image_path"]
+scene_id=49
+scene_id_str=(str(scene_id).zfill(6))
+image_path= f"/home/andrea/Desktop/test_set/ycbv_test_bop19/ycbv/test/{scene_id_str}/rgb/{id_image_str}.png"  #config["image_path"]
 
-mask_path= config["mask_path"]
+mask_path= f"/home/andrea/Desktop/Thesis_project/Segmented/mask/{scene_id_str}/{id_image_str}.png" #config["mask_path"]
 
-segmentation_path = config["segmentation_path"]
+segmentation_path =f"/home/andrea/Desktop/Thesis_project/Segmented/rgb/{scene_id_str}/" #config["segmentation_path"]
 
 text_prompt = config["text_prompt"]
 
 obj_id = config["obj_id"]
-mask_file_name = text_prompt+ "_"+image_path.split("/")[-1]
-#segmentation_file_name = text_prompt+ "_"+image_path.split("/")[-1]
 obj_str = str(int(obj_id)).zfill(6) 
-segmentation_file_name = text_prompt+ "_"+obj_str
+
+mask_file_name = id_image_str+"_"+obj_str+".png"
+#segmentation_file_name = text_prompt+ "_"+image_path.split("/")[-1]
+segmentation_file_name = id_image_str+"_"+obj_str+".png"
 print(config)
 
 '''

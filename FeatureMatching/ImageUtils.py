@@ -93,7 +93,44 @@ def make_quadratic_crop(image, bbox):
         crop = image[crop_y:crop_y+crop_size, crop_x:crop_x+crop_size]
     
     return crop, crop_y, crop_x
+'''
+def make_quadratic_crop(image, bbox):
+    import numpy as np
+    import cv2
 
+    # Dimensione del crop
+    crop_size = 224
+
+    # Bounding box
+    x_left, y_top, width, height = bbox
+    center_x = x_left + width / 2
+    center_y = y_top + height / 2
+
+    # Coordinate del crop centrato
+    crop_x = int(center_x - crop_size / 2)
+    crop_y = int(center_y - crop_size / 2)
+
+    image = np.array(image)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    # Calcola i margini se il crop esce dall'immagine
+    top = max(0, -crop_y)
+    bottom = max(0, crop_y + crop_size - image.shape[0])
+    left = max(0, -crop_x)
+    right = max(0, crop_x + crop_size - image.shape[1])
+
+    # Aggiungi bordo se necessario
+    if top > 0 or bottom > 0 or left > 0 or right > 0:
+        image = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_REPLICATE)
+
+    # Aggiorna le coordinate del crop se c'è stato padding
+    crop_y += top
+    crop_x += left
+
+    crop = image[crop_y:crop_y+crop_size, crop_x:crop_x+crop_size]
+
+    return crop, crop_y, crop_x
+'''
 
 def chunk_cosine_sim(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     """ Computes cosine similarity between all possible pairs in two sets of vectors.
@@ -285,7 +322,7 @@ def draw_projected_3d_bbox(image, obj_id, rvec, tvec, camera_matrix, dist_coeffs
     plt.axis("off")
     plt.show()
 
-def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_gt, camera_matrix, dist_coeffs, models_info_path):
+def draw_projected_3d_bbox_gt(folder_id,image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_gt, camera_matrix, dist_coeffs, models_info_path):
     
    # Definisci la bounding box normalizzata [0, 1] nel frame dell’oggetto
     bbox_3D = np.array([
@@ -377,7 +414,21 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
         except:
             continue
     
-    
+    #GT image
+    '''
+    fx = 1066.778
+    fy = 1067.487
+    cx = 312.9869079589844
+    cy = 241.3108977675438
+
+
+    #clfx,fy,cx,cy=intrinsic
+    #fx,fy,cx,cy=intrinsic
+    camera_matrix = np.array([[fx,         0,      cx],
+                    [0.0,        fy,     cy],
+                    [0.0,       0.0,    1.0]])'''
+
+
     # Proiezione nel piano immagine
     projected_points2, _ = cv2.projectPoints(bbox_3D_scaled, rvec_gt, tvec_gt, camera_matrix, dist_coeffs)
     projected_points2 = projected_points2.reshape(-1, 2)
@@ -441,7 +492,7 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
         cv2.line(image, pt1, pt2, color=(0, 255, 0), thickness=2)
 
 
-    output_dir = "temp"
+    output_dir = f"/home/andrea/Desktop/Thesis_project/evaluation/claster_by_scenes/{folder_id}/"
     os.makedirs(output_dir, exist_ok=True)
 
     # Percorso completo del file da salvare
@@ -453,10 +504,10 @@ def draw_projected_3d_bbox_gt(image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_
     #plt.savefig(output_path, bbox_inches='tight')
 
     plt.axis("off")
-    #plt.show()
-    plt.show(block=False)     # Mostra senza bloccare l'esecuzione
-    plt.pause(1)              # Attende 3 secondi
-    plt.close()               # Chiude la finestra del plot
+    plt.show()
+    '''plt.show(block=False)     # Mostra senza bloccare l'esecuzione
+    plt.pause(4)              # Attende 3 secondi
+    plt.close()     '''          # Chiude la finestra del plot
 
 
 def input_resize(image, target_size, intrinsics):

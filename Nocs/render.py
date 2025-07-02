@@ -64,7 +64,9 @@ args = parser.parse_args()
 config = load_config(args.config)
 obj_id= config["obj_id"]
 obj_filename = f"obj_{int(obj_id):06d}.ply"
-obj_path = f"/home/andrea/Desktop/Thesis_project/Models/{obj_filename}"
+obj_path = f"/home/andrea/Desktop/Thesis_project/Models/{obj_filename}" ##normal model ##
+#obj_path="Models/TRELLIS/000014/sample.glb" ##TRELLIS MODEL
+
 #obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000014.ply" #config["glb_path"]
 
 #load the object
@@ -73,9 +75,36 @@ obj =objs[0]
 
 light = bproc.types.Light()
 light.set_type("POINT")  # Tipo di luce, in questo caso una luce puntiforme
-light.set_location([2, -2, 15])
-light.set_energy(200)
+#light.set_location([2, -2, 15])
+#light.set_energy(200)
+light.set_location(bproc.sampler.shell(
+    center=[1, 2, 3],
+    radius_min=4,
+    radius_max=7,
+    elevation_min=15,
+    elevation_max=70
+))
+light.set_energy(500)
 
+light = bproc.types.Light()
+light.set_type("POINT")  # Tipo di luce, in questo caso una luce puntiforme
+#light.set_location([2, -2, 15])
+#light.set_energy(200)
+light = bproc.types.Light()
+light.set_type("POINT")
+light.set_location([1, -1, 1])
+light.set_energy(200)
+light = bproc.types.Light()
+light.set_type("POINT")
+light.set_location([-1, -1, -1])
+light.set_energy(200)
+light = bproc.types.Light()
+light.set_type("POINT")
+light.set_location([-1, 0, -1])
+light.set_energy(20)
+light.set_type("POINT")
+light.set_location([1, 0, 1])
+light.set_energy(20)
 
 camera_pose = np.array([
     [1, 0, 0, 2],  # X
@@ -87,10 +116,8 @@ camera_pose = np.array([
 
 #obj.set_location(obj.get_location() + Vector((0.3,0.8,3.))) 
 
-#new_rotation = Euler((np.radians(-90), 0 , 0), 'XYZ')  # Rotation around x axis -90
-
+#new_rotation = Euler((np.radians(-90), 0 , 0), 'XYZ')  # Rotation around x axis -90 #to apply when i'm using trellis models
 #apply rotation
-
 #obj.set_rotation_euler(new_rotation)
 
 
@@ -102,6 +129,7 @@ config_path =  "config/"+config_subfolder
 '''
 
 cam2Pos_path=config["cam2Pos_path"]
+#cam2Pos_path=config["cam2Pos_path_trellis"]
 
 #open file yaml with cameraPose configuration
 with open(cam2Pos_path, "r") as file:
@@ -110,13 +138,19 @@ with open(cam2Pos_path, "r") as file:
 
 # convert list into numPy arrary
 can2world_matrix_array = [np.array(matrix) for matrix in data["cam2Pos"]]
+bproc.camera.set_resolution(224,224)
+
 # print transformation matrix
 for i, matrix in enumerate(can2world_matrix_array):
     bproc.camera.add_camera_pose(matrix)
     print(f"Matrix {i}:\n{matrix}\n")
 
 
+#bproc.python.renderer.RendererUtility.set_world_background([0.5, 0.5, 0.5])
+
+
 bproc.python.renderer.RendererUtility.set_world_background([0.5, 0.5, 0.5])
+
 
 #render of the scene
 data = bproc.renderer.render()
@@ -128,6 +162,8 @@ cam_K =         np.array([[1066.778, 0.0,      312.9869079589844],
 output_subfolder = obj_path.split("/")[-1]
 print(output_subfolder)
 output_subfolder= output_subfolder.removesuffix(".glb")
+#output_subfolder=output_subfolder+"_"+str(obj_id) #for trellis, uncomment for normal
+
 output_path = "blender_render/"+output_subfolder
 
 # create the folder

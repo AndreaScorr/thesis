@@ -18,6 +18,7 @@ from lang_sam import LangSAM
 import ImageUtils as img_utils
 import json_utils as js
 import Evaluation_utils as Eval
+import findBest_template as fbt
 
 def load_config(config_path):
     with open(config_path, 'r') as f:
@@ -161,9 +162,9 @@ def draw_correspondences(points1: List[Tuple[float, float]], points2: List[Tuple
     assert len(points1) == len(points2), f"points lengths are incompatible: {len(points1)} != {len(points2)}."
     num_points = len(points1)
     fig1, ax1 = plt.subplots()
-    ax1.axis('off')
+    #ax1.axis('off')
     fig2, ax2 = plt.subplots()
-    ax2.axis('off')
+    #ax2.axis('off')
     ax1.imshow(image1)
     ax2.imshow(image2)
 
@@ -255,6 +256,10 @@ def segmentation_from_file(id_folder,id_image,obj_id):
     # Leggi l'immagine
     mask_np = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     
+    # Definisci il kernel: controlla quanto "smussa"
+    kernel = np.ones((3, 3), np.uint8)
+    mask_np = cv2.erode(mask_np, kernel, iterations=1)
+
     if mask_np is None:
         raise FileNotFoundError(f"Immagine non trovata nel percorso: {path}")
     
@@ -262,8 +267,10 @@ def segmentation_from_file(id_folder,id_image,obj_id):
     #plt.imshow(mask_np, cmap='gray')
     #plt.title(f"Mask: {id_str}_{obj_str}.png")
     #plt.axis('off')
+    #plt.show()
+    
     #plt.show(block=False)
-    #plt.pause(1)
+    #plt.pause(3)
     #plt.close() 
     return mask_np
 
@@ -321,7 +328,6 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         #save_dir.mkdir(exist_ok=True, parents=True)
 
         
-        symmetric_objs =[1, 13, 16, 18, 19, 20, 21]
         #id_image = 201
         folder_str = str(int(id_folder)).zfill(6) 
         id_str = str(int(id_image)).zfill(6)
@@ -345,17 +351,9 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             image1_pil_show = Image.open(image_path1)
             #plt.imshow(image1_pil_show)
             #plt.show()
-            #print("image_id:",image_id)
-            #image_path1 = "/home/andrea/Desktop/Thesis_project/Inputs/000305.jpg"
-            #template_id = 20
-            #image_path2 = "blender_render/obj_000014.ply/000020.png"
-            #i=20
-            #best_theta = np.inf
-            #best_ADD = np.inf
+            
             best_t_id = 0
-            #template_id = 20
-            #obj_id = config["obj_id"]
-            #t=template_id
+           
             obj_str = str(int(obj_id)).zfill(6)  # Garantisce che obj_id sia sempre a 6 cifre con zeri iniziali
             
             #image_path2 = f"blender_render/obj_{obj_str}.ply/{str(template_id).zfill(6)}.png"  
@@ -363,22 +361,20 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             
             print("image_path2:",image_path2)
 
-            #i=(int)(image_path2.split("/")[-1].removesuffix(".png"))
-            
+           
             
 
             
-            #image_path2 = "blender_render/obj_000005.ply/000002.png"
 
 
             image1_pil =Image.open(image_path1).convert('RGB')
             image1_pil_show = Image.open(image_path1)
             #plt.figure(2)
             #plt.imshow(image1_pil)
+            #plt.show()
             #plt.show(block=False)
             #plt.pause(1)
             #plt.close()
-            #print(config["text_prompt"])
             #mask = segmentation(image1_pil,config["text_prompt"])
             mask = segmentation_from_file(id_folder=id_folder,id_image=id_image,obj_id=obj_id)
 
@@ -411,11 +407,19 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
 
 
             img_crop = cv2.bitwise_and(img_crop, img_crop, mask=mask_crop)
-            
+            buffer= "/home/andrea/Desktop/Thesis_project/FeatureMatching/buffer/crop.png"
+            cv2.imwrite(buffer,img_crop)
+            best_template=fbt.find_Best_template_patchwise(input_image_path=buffer,template_dir=f"blender_render/obj_{obj_str}.ply")
+
+            '''cv2.imshow("Cropped Image", img_crop)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+                       img_crop= cv2.cvtColor(img_crop, cv2.COLOR_BGR2RGB)
             #print("imgcrop size:",img_crop.shape)
-            #plt.figure(3)
-            #plt.imshow(img_crop)
-            
+            plt.figure(3)
+            plt.axis("off")
+            plt.imshow(img_crop)
+            plt.show()'''
             #plt.show(block=False)
             #plt.pause(1)
             #plt.close()
@@ -423,8 +427,10 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             
             image_path1="temp/img_crop.png"
             cv2.imwrite(image_path1,img_crop)
+            image_path2=f"blender_render/obj_{obj_str}.ply/{best_template}"
+            print("best_template_path",image_path2)
             try:
-                points1, points2, image1_pil, image2_pil = find_correspondences(image_path1,image_path2,num_pairs=30)
+                points1, points2, image1_pil, image2_pil = find_correspondences(image_path1,image_path2,num_pairs=30) #30 #original
             except:
                 continue
             print("n_correspondences:",len(points1))
@@ -446,12 +452,14 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             
             #print("points2:",points2)
             draw_correspondences(points1,points2,image1_pil,image2_pil)
-            plt.show(block=False)
-            plt.pause(0.1)
+            plt.show()
+            '''plt.show(block=False)
+            plt.pause(1)
             plt.close()
+            
             plt.show(block=False)
-            plt.pause(0.1)
-            plt.close()
+            plt.pause(1)
+            plt.close()'''
             
             _,y_offset,x_offset=img_utils.make_quadratic_crop(image1_pil_show,bbox)
             #print("y_offset after crop show:" ,y_offset)
@@ -463,19 +471,21 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             #i=0
             obj_str = str(int(obj_id)).zfill(6)
             nocs_path = f"/home/andrea/Desktop/Thesis_project/nocs/obj_{obj_str}.ply"
+            
             #nocs_path = "/home/andrea/Desktop/Thesis_project/nocs/obj_000014.ply" #config["mask_path"].replace("/Segmented/mask","/nocs")+"/"+text_prompt+"_"+subfolder_nocs+"_sample"
             assets_data_type =".png"
             #image_nocs_path = os.path.join(nocs_path, f"{str(template_id).zfill(6)}{assets_data_type}")
             image_nocs_path = os.path.join(nocs_path, f"{str(t).zfill(6)}{assets_data_type}")
-
+            image_nocs_path=f"/home/andrea/Desktop/Thesis_project/nocs/obj_{obj_str}.ply/{best_template}"
             #print(f'image_nocs path: {image_nocs_path}')
             img_nocs =cv2.imread(image_nocs_path,cv2.IMREAD_COLOR_RGB)
             #img_nocs= cv2.resize(img_nocs,(224,224))
             #img_nocs = cv2.resize(img_nocs, (image2_pil.shape[0], image2_pil.shape[1]))
             
-            img_nocs = cv2.resize(img_nocs, image2_pil.size)
+            print("img_nocs pil", image2_pil.size)
+            print("img shape", img_crop[:,:,0].shape)
+            img_nocs = cv2.resize(img_nocs, image2_pil.size) #usato fino a mo
             #img_nocs = cv2.resize(img_nocs, img_crop[:,:,0].shape) #works better
-
             #print("image_nocs" ,img_nocs.shape)
             
             assets_data_type= ".png"
@@ -495,13 +505,13 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
                 ##print(f'posizione {x1,y1} colore: {img_nocs[y1,x1]}')
                 img_nocs[y1,x1]=(255,0,0) #paint the pixel of the match
 
-            '''
+            
             plt.figure(5)
             plt.imshow(img_nocs)
-
+            
             plt.show(block=False)
             plt.pause(2)
-            plt.close()'''
+            plt.close()
             #Converti in array NumPy
             points1 = np.array(points1)
 
@@ -552,14 +562,7 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             with open("/home/andrea/Desktop/Thesis_project/Models/models_info.json", "r") as f:
                 models_info = json.load(f)
 
-            size_x = models_info[str(obj_id)]["size_x"]
-            size_y = models_info[str(obj_id)]["size_y"]
-            size_z = models_info[str(obj_id)]["size_z"]
-            bbox_gt_size = np.array([size_x, size_y, size_z])
-            scale_factors = bbox_gt_size / bbox_rec_size
-            scale_factors = bbox_gt_size / bbox_rec_size
-            #print("Scale factors per asse:", scale_factors)
-            uniform_scale = np.mean(scale_factors)
+            
             #print("Uniform scale factor:", uniform_scale)
             r3D.generate_pointCloud(mesh,feature_point_tuple)
 
@@ -569,9 +572,9 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             target_size = (image1_pil.size[1],image1_pil.size[0]) 
             fx = 1066.778
             fy = 1067.487
-            cx = 312.9869079589844
-            cy = 241.3108977675438
-
+            cx = 312.9869 #312.9869079589844
+            cy = 241.3109 #241.3108977675438
+            
             _,intrinsic=img_utils.input_resize(image1_pil_show,image1_pil.size,intrinsics=[fx, fy, cx, cy])
             #print("instrinsic:",intrinsic)
             #clfx,fy,cx,cy=intrinsic
@@ -603,13 +606,21 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             object_points_3D = np.array(features_nocs_to_mesh, dtype=np.float32)
             image_points_2D = np.array(points1, dtype=np.float32)
             
-
+            z_values = object_points_3D[:, 2]
+            print("Z range:", np.min(z_values), np.max(z_values))
+            
+            '''mask = (object_points_3D[:, 2] >0) #& (object_points_3D[:, 2] < 20.0)
+            
+            object_points_3D = object_points_3D[mask]
+            image_points_2D = image_points_2D[mask]  # <-- anche i punti 2D vanno filtrati'''
 
             #success,rvec,tvec=cv2.solvePnP(object_points_3D, image_points_2D, cam_K, distCoeffs=None)
             dist_coeffs = np.zeros(4, dtype=np.float32)
             #print(image_points_2D.size)
+            #object_points_3D = object_points_3D -np.mean(object_points_3D, axis=0)
+
             try:
-                retval, rvec, tvec, inliers = cv2.solvePnPRansac(object_points_3D, image_points_2D, cam_K,distCoeffs=dist_coeffs, iterationsCount=500, reprojectionError=9.0)
+                retval, rvec, tvec, inliers = cv2.solvePnPRansac(object_points_3D, image_points_2D, cam_K,distCoeffs=dist_coeffs, iterationsCount=500, reprojectionError=2.0)
             except:
                 continue
             #print("tvec shape",tvec.shape)
@@ -624,17 +635,23 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             
             #json_gt="/home/andrea/Downloads/ycbv_train_pbr/train_pbr/000049/scene_gt.json"
             #json_gt=f"/home/andrea/test_set/ycbv_test_all/test/{folder_str}/scene_gt.json"
-            
-            json_gt=f"/home/andrea/Desktop/test_set/ycbv_test_bop19/test/{folder_str}/scene_gt.json"
+
+            json_gt=f"/home/andrea/Desktop/test_set/ycbv_test_bop19/ycbv/test/{folder_str}/scene_gt.json"
             gt_R,gt_T=js.estrai_parametri(imgId=image_id,json_path=json_gt,target_obj_id=obj_id)
             gt_T =np.asarray(gt_T).reshape(-1)
-            distance = np.sqrt(np.sum((tvec - gt_T)**2))
+            #distance = np.sqrt(np.sum((tvec - gt_T)**2))
             #print("error:",error)
             print("GtR:",gt_R)
             print("GtT:",gt_T)
             print("rotation error" , Eval.rotation_error(gt_R,R))
             error = Eval.translation_error(gt_T, tvec)
             print(f"Errore di traslazione: {error:.2f} mm")
+
+            print("3D points center:", np.mean(object_points_3D, axis=0))
+
+
+            print("Delta:",(gt_T-tvec))
+
             
             path_to_mesh = f"/home/andrea/Desktop/Thesis_project/Models/obj_{obj_str}.ply"
             points_eval = r3D.load_mesh_points(path_to_mesh)
@@ -671,6 +688,7 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             
             print("min rotatio",min_rotation_error)
             print("min tra",min_translation_error)
+            best_template_id = int(best_template.removesuffix(".png"))
             if(Eval.rotation_error(gt_R,R)<min_rotation_error and Eval.translation_error(gt_T, tvec)<min_translation_error):
                 print("entrato",best_template_id)
                 best_d=d
@@ -678,7 +696,7 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
                 best_t_gt=np.asarray(gt_T).reshape(-1)
                 best_R_pred=R
                 best_t_pred=tvec
-                best_template_id=t
+                #best_template_id=t
                 min_rotation_error=Eval.rotation_error(gt_R,R)
                 min_translation_error=Eval.translation_error(gt_T, tvec)
 
@@ -756,6 +774,7 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
      
 
         img_utils.draw_projected_3d_bbox_gt(
+        folder_id=id_folder,
         image_id= image_id,
         image=image1_pil_show,
         obj_id=str(obj_id),
@@ -795,24 +814,24 @@ if __name__ == "__main__":
     with torch.no_grad():
         obj_id = config["obj_id"]
         best=[]
-        best_template_id = [19,37,50]
+        best_template_id = [89]
         template_id =17
         # Load JSON file
-        id_folder=59
+        id_folder=50
         folder_str = str(int(id_folder)).zfill(6)
-        json_path= f"/home/andrea/Desktop/test_set/ycbv_test_bop19/test/{folder_str}/scene_gt.json"
+        json_path= f"/home/andrea/Desktop/test_set/ycbv_test_bop19/ycbv/test/{folder_str}/scene_gt.json"
         with open(json_path, 'r') as f:
             data = json.load(f)
         ids = list(map(int, data.keys()))
         print(ids)
-        
+        check_ids =[83, 1027, 1059, 1087, 1568, 1576, 2051] #49 obj 6 [1172, 2061]# 48 [1128,1122, 1137]
 #        for id_image in range(1,2):
-        for id_image in ids:
+        for id_image in   ids[-10:]: #check_ids:#
 
             #for template_id in best_template_id:
             #id_image=8
                 #try:
-            #print("template",template_id)
+            #print("templateooo",template_id)
 
             dict_st_result=Estimate_Pose_from_correspondences(id_folder=id_folder,
                                                             id_image=id_image,

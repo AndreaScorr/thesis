@@ -70,6 +70,7 @@ def nocs_to_mesh(points, scaling_factor,obj_id):
     with open(models_info_path, "r") as f:
         models_info = json.load(f)
 
+    
     #scaling_factor=IU.compute_model_diameter(None,obj_id,models_info_path=models_info_path)
     #scaling_factor =models_info[str(obj_id)]["diameter"]*10 
     print("scaling factor",scaling_factor)
@@ -86,12 +87,10 @@ def nocs_to_mesh(points, scaling_factor,obj_id):
         y = y*2-1
         z = z*2-1
 
-        #x = x * size_x
-        #y = y * size_y
-        #z = z * size_z
+       
 
         reconstructed_vertex = [x * scaling_factor, y * scaling_factor, z * scaling_factor]
-
+        #reconstructed_vertex=[x,y,z]
         mesh.append(reconstructed_vertex)
 
     
@@ -107,9 +106,9 @@ def features_nocs_to_mesh(points, scaling_factor,obj_id):
     # Carica le dimensioni reali dell’oggetto
     with open(models_info_path, "r") as f:
         models_info = json.load(f)
-
+  
     #scaling_factor=IU.compute_model_diameter(None,obj_id,models_info_path=models_info_path)
-    #scaling_factor =models_info[str(obj_id)]["diameter"]*10 
+    #scaling_factor =models_info[str(obj_id)]["diameter"]/10 
     for i in range(len(points)):
         x = points[i][0]
         y = points[i][1]
@@ -123,9 +122,7 @@ def features_nocs_to_mesh(points, scaling_factor,obj_id):
         y = y*2-1
         z = z*2-1
 
-        #x = x * size_x
-        #y = y * size_y
-        #z = z * size_z
+      
         reconstructed_vertex = [x * scaling_factor, y * scaling_factor, z * scaling_factor]
 
         mesh.append(reconstructed_vertex)
@@ -184,7 +181,7 @@ def generate_pointCloud(mesh,list_point):
     center = bbox.get_center().cpu().numpy()
 
     # **Visualizzazione**
-    #o3d.visualization.draw_geometries([pcd.to_legacy(), picked_point_cloud],zoom=0.3412,front=[0, 0, -1],lookat=center,up=[0, -1, 0])
+    o3d.visualization.draw_geometries([pcd.to_legacy(), picked_point_cloud],zoom=0.3412,front=[0, 0, -1],lookat=center,up=[0, -1, 0])
 
 
 

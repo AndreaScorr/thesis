@@ -26,6 +26,7 @@ from math import acos, degrees
 from scipy.spatial.distance import cdist
 from scipy.spatial import cKDTree
 from sklearn.neighbors import KDTree
+from scipy.spatial.transform import Rotation as Rot
 
 import csv
 import os
@@ -216,6 +217,44 @@ def save_pose_result(csv_path, scene_id, im_id, obj_id, score, R, t, time_taken)
 
 
 
+def save_offset_result(csv_path, scene_id, im_id, obj_id,gt_R,R, gt_T,t):
+
+    delta = gt_T-t
+    x= delta[0]
+    y= delta[1]
+    z= delta[2]
+
+    # R_pred e GtR sono le due matrici di rotazione 3x3
+    R_rel = R @ gt_R.T  # rotazione relativa
+
+    # Converto in angoli di eulero (yaw, pitch, roll)
+    r = Rot.from_matrix(R_rel)
+    z_ang, y_ang, x_ang = r.as_euler('zyx', degrees=True)  # attenzione all'ordine
+
+    # Converti R (3x3) e t (3x1) in stringa
+    t_str = ' '.join(['{:.6f}'.format(val) for val in t.flatten()])
+
+    # Crea la riga
+    row = {
+        'scene_id': scene_id,
+        'im_id': im_id,
+        'obj_id': obj_id,
+        'x_offset':x,
+        'y_offset':y,
+        'z_offset':z,
+        'x_angle':x_ang,
+        'y_angle':y_ang,
+        'z_angle':z_ang,
+        
+    }
+
+    # Scrittura (header solo se il file non esiste)
+    file_exists = os.path.isfile(csv_path)
+    with open(csv_path, mode='a', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=['scene_id', 'im_id', 'obj_id', 'x_offset', 'y_offset', 'z_offset','x_angle' , 'y_angle','z_angle' ])
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(row)
 
 
 
@@ -249,26 +288,43 @@ def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R
     }
     obj_id_folder = str(int(obj_id)).zfill(6)
     score= calc_score(pts3d, diameter, R_gt, t_gt, R_pred, t_pred, decay=0.05)
-    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/{obj_id_folder}", exist_ok=True)
+    
+    ##save the data clastered by scene##
+    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/claster_by_scenes/{str(int(folder)).zfill(6)}", exist_ok=True)
+    json_clastered_path = f"/home/andrea/Desktop/Thesis_project/evaluation/claster_by_scenes/{str(int(folder)).zfill(6)}/{str(int(obj_id))}.json"
+    #with open(json_path, "a") as f:
+    #    f.write(json.dumps(result, separators=(',', ':')) + "\n")
+    
 
-    json_path = f"/home/andrea/Desktop/Thesis_project/evaluation/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.jsonl"
+    ##save the data clastered by object id##
+    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/{str(int(obj_id))}", exist_ok=True)
+    json_path = f"/home/andrea/Desktop/Thesis_project/evaluation/{str(int(obj_id))}/results_{str(int(folder)).zfill(6)}.jsonl"
     # Scrivi in append, una riga = un oggetto JSON compatto
-    with open(json_path, "a") as f:
-        f.write(json.dumps(result, separators=(',', ':')) + "\n")
+    #with open(json_path, "a") as f:
+    #    f.write(json.dumps(result, separators=(',', ':')) + "\n")
 
     #csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.csv"
     csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/andrea_ycbv-test.csv"
-
-    
+        
+    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{str(int(obj_id))}", exist_ok=True)
+    csv_offset = f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{str(int(obj_id))}/offsets_{str(int(folder)).zfill(6)}.csv"
+    save_offset_result(csv_path=csv_offset,
+                       scene_id=folder,
+                       im_id=id_image,
+                       obj_id=obj_id,
+                       gt_R=R_gt,
+                       R=R_pred,
+                       gt_T=t_gt,
+                       t=t_pred)
     os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/csv", exist_ok=True)
-    save_pose_result(csv_path=csv_path,
+    '''save_pose_result(csv_path=csv_path,
                      scene_id=folder,
                      im_id=id_image,
                      obj_id=obj_id,
                      time_taken=-1,
                      score=score,
                      R=R_pred,
-                     t=t_pred)
+                     t=t_pred)'''
     
     return Add, Add_S
 
@@ -328,7 +384,7 @@ def compute_precision(results, max_rot_deg=5, max_trans_cm=5):
     total = TP + FP
     return (TP / total) * 100 if total > 0 else 0
 
-def compute_ap_curve(results, mode="rotation", max_threshold=50, step=1):
+def compute_ap_curve(results, mode="rotation", max_threshold=180, step=1):
     thresholds = list(range(1, max_threshold + 1, step))
     ap_values = []
 
@@ -354,14 +410,14 @@ def plot_ap_curve_single_class(file_path, mode="rotation"):
     thresholds, ap_values = compute_ap_curve(results, mode=mode)
 
     plt.figure(figsize=(8, 5))
-    plt.plot(thresholds, ap_values, marker='o', label=class_name)
+    plt.plot(thresholds, ap_values, label=class_name)
     plt.xlabel("Rotation error (°)" if mode == "rotation" else "Translation error (cm)")
     plt.ylabel("AP (%)")
     plt.title(f"{mode.capitalize()} AP Curve - {class_name}")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    #plt.show()
 
 def compute_add_percentage(results):
     add_scores,add_s_scores=0, 0
@@ -402,4 +458,8 @@ def plot_all_jsonl_curves(folder_path, mode="rotation"):
     plt.grid(True)
     plt.legend(title="Object")
     plt.tight_layout()
+    out_name = f"combined_{mode}_ap_curves.png"
+    out_path = os.path.join(folder_path, out_name)
+    #plt.savefig(out_path)
+    print(f"Grafico salvato in: {out_path}")
     plt.show()

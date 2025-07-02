@@ -3,7 +3,7 @@ import argparse
 import bpy
 from mathutils import Vector
 from mathutils import Euler
-
+import json
 import yaml
 
 import matplotlib.pyplot as plt
@@ -76,7 +76,8 @@ config = load_config(args.config)
 
 obj_id= config["obj_id"]
 obj_filename = f"obj_{int(obj_id):06d}.ply"
-obj_path = f"/home/andrea/Desktop/Thesis_project/Models/{obj_filename}"
+obj_path = f"/home/andrea/Desktop/Thesis_project/Models/{obj_filename}" ##normal #don't remove
+#obj_path="Models/TRELLIS/000014/sample.glb" ##TRELLIS MODEL
 #obj_path  = "/home/andrea/Desktop/Thesis_project/Models/obj_000001.ply" #config["glb_path"]
 name_file = obj_path.split("/")[-1]
 name_file = name_file.removesuffix('.glb')
@@ -102,7 +103,10 @@ print(f'output dir {output_dir}')
 
 os.makedirs(config_path, exist_ok=True)
 
-scale_path = output_dir+'/config/'+name_file+'_scale.yaml'
+scale_path = output_dir+'/config/'+name_file+'_scale.yaml' #scale path ground truth 
+
+### trellis model ###
+#scale_path = output_dir+'/trellis_config/'+name_file+'_scale.yaml' #scale path trellis model
 
 yaml_data = {"scaling_factor" : float(scaling_factor)}
 with open(scale_path, 'w') as file:
@@ -187,7 +191,7 @@ if blender_object.data.materials:
     blender_object.data.materials[0] = material
 else:
     blender_object.data.materials.append(material)
-
+'''
 # Continue with BlenderProc operations
 # bproc_mesh = bproc.object.create_from_blender_mesh(blender_mesh, object_name="object_nocs")
 
@@ -198,10 +202,10 @@ else:
 # obj_location = bproc_mesh.get_location()
 
 #blender_object.location += Vector((0.1,0.1,1.))  
-#blender_object.location += Vector((0.3,0.8,3.))  
+#blender_object.location += Vector((0.3,0.8,3.))  '''
 
 obj_location = np.array(blender_object.location)
-
+print("obj location",obj_location)
 '''
 # Define how many views to render
 num_views = 3# or any number provided by the user
@@ -351,11 +355,21 @@ def sphere_coords_with_orientations(num_views, rotations_per_view=4, radius=2):
     return camera_positions, roll_angles
 
 camera_positions, roll_angles = sphere_coords_with_orientations(
-    num_views=200, rotations_per_view=1, radius=scaling_factor + 80
+    num_views=200, rotations_per_view=1, radius=scaling_factor + 50 #1 for trellis
 )
 can2world_matrix_array = []
-
+data = {}
+i=0
 for pos, roll in zip(camera_positions, roll_angles):
+    print("pos",pos)
+
+    data[str(i)] = {
+        "x": pos[0],
+        "y": pos[1],
+        "z": pos[2]
+    }
+    i+=1
+
     cam_location = np.array(obj_location) + np.array(pos)
     forward_vec = obj_location - cam_location
 
@@ -374,9 +388,11 @@ for pos, roll in zip(camera_positions, roll_angles):
 
     cam2world_matrix = bproc.math.build_transformation_mat(cam_location, final_rotation)
     can2world_matrix_array.append(cam2world_matrix)
+    bproc.camera.set_resolution(224,224)
     bproc.camera.add_camera_pose(cam2world_matrix)
 
-
+with open(f'/home/andrea/Desktop/Thesis_project/nocs/{obj_filename}/positions.json', 'w') as f:
+    json.dump(data, f, indent=4)
 #print(cam2world_matrix)
 
 #for i, matrix in enumerate(can2world_matrix_array):
@@ -390,6 +406,9 @@ bproc.python.renderer.RendererUtility.set_denoiser(None)
 bpy.context.scene.cycles.filter_width = 0.0
 bproc.renderer.enable_segmentation_output(map_by=["instance"])
 
+
+#bproc.renderer.set_output_resolution(224, 224)
+
 # Render the whole pipeline
 data = bproc.renderer.render()
 #print(len(data["colors"][1]))
@@ -401,6 +420,7 @@ data = bproc.renderer.render()
 output_subfolder = obj_path.split("/")[-1]
 print(output_subfolder)
 output_subfolder= output_subfolder.removesuffix(".glb")
+#output_subfolder=output_subfolder+"_"+str(obj_id) #for trellis, uncomment for normal
 print(output_subfolder)
 #print(output_subfolder)
 
@@ -424,9 +444,12 @@ camera_poses_path = obj_path.split("/")
 camera_poses_path= camera_poses_path[1].removesuffix(".glb")
 camera_poses_path =  "config/"+camera_poses_path
 
-
 #print(camera_poses_path)
 cam2Pos_path = output_dir+'/config/'+name_file+'_cam2Pos.yaml'
+
+### trellis ###
+#cam2Pos_path = output_dir+'/trellis_config/'+name_file+'_cam2Pos.yaml' #trellis path position
+
 can2world_matrix_list = [matrix.tolist() for matrix in can2world_matrix_array]
 yaml_data_cam = {"cam2Pos" : can2world_matrix_list}
 with open(cam2Pos_path, 'w') as file:
@@ -437,8 +460,9 @@ print(scale_path)
 print(cam2Pos_path)
 
 update_config(args.config,
-              {"scale_path": scale_path,
-               "cam2Pos_path": cam2Pos_path}
-
+              {#"scale_path": scale_path,
+               "scale_path_trellis": scale_path,
+               #"cam2Pos_path": cam2Pos_path}
+                "cam2Pos_path_trellis": cam2Pos_path}
               
               )

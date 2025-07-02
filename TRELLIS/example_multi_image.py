@@ -13,12 +13,20 @@ from trellis.utils import render_utils
 # Load a pipeline from a model folder or a Hugging Face model hub.
 pipeline = TrellisImageTo3DPipeline.from_pretrained("JeffreyXiang/TRELLIS-image-large")
 pipeline.cuda()
+input_path1 =  "/home/andrea/Desktop/Thesis_project/Segmented/rgb/000053/000247_000013.png"
+input_path2 =  "/home/andrea/Desktop/Thesis_project/Segmented/rgb/000053/000052_000013.png"
 
 # Load an image
+image = Image.open(input_path1)
+output_path = "/home/andrea/Desktop/Thesis_project/Models/TRELLIS/"
+file_name=input_path1.split("/")[-1].removesuffix(".png")
+file_name=file_name.split("_")[-1]
+output_path = output_path+file_name 
+# Load an image
 images = [
-    Image.open("assets/example_multi_image/character_1.png"),
-    Image.open("assets/example_multi_image/character_2.png"),
-    Image.open("assets/example_multi_image/character_3.png"),
+    Image.open(input_path1),
+    Image.open(input_path2),
+    #Image.open("assets/example_multi_image/character_3.png"),
 ]
 
 # Run the pipeline
@@ -39,8 +47,10 @@ outputs = pipeline.run_multi_image(
 # - outputs['gaussian']: a list of 3D Gaussians
 # - outputs['radiance_field']: a list of radiance fields
 # - outputs['mesh']: a list of meshes
+os.makedirs(output_path, exist_ok=True)
 
 video_gs = render_utils.render_video(outputs['gaussian'][0])['color']
 video_mesh = render_utils.render_video(outputs['mesh'][0])['normal']
 video = [np.concatenate([frame_gs, frame_mesh], axis=1) for frame_gs, frame_mesh in zip(video_gs, video_mesh)]
-imageio.mimsave("sample_multi.mp4", video, fps=30)
+imageio.mimsave(output_path+"sample_multi.mp4", video, fps=30)
+outputs['gaussian'][0].save_ply(output_path +"sample.ply")

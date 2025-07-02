@@ -18,7 +18,8 @@ else:
 #results_path = r"/home/andrea/Desktop/Thesis_project/evaluation/csv/000014"
 results_path = r"/home/andrea/Desktop/Thesis_project/evaluation/csv"
 # Folder for the calculated pose errors and performance scores.
-eval_path = r"/home/andrea/Desktop/Thesis_project/temp"
+#eval_path = r"/home/andrea/Desktop/Thesis_project/temp"
+eval_path = r"/home/andrea/Desktop/Thesis_project/examples"
 
 ######## Extended ########
 
