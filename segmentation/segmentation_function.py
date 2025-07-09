@@ -64,10 +64,10 @@ parser.add_argument('--config', type=str, required=True, help='Path to config YA
 args = parser.parse_args()
 
 config = load_config(args.config)
-id_image = 2119
+id_image = 2070
 id_image_str=(str(id_image).zfill(6))
 
-scene_id=49
+scene_id=48
 scene_id_str=(str(scene_id).zfill(6))
 image_path= f"/home/andrea/Desktop/test_set/ycbv_test_bop19/ycbv/test/{scene_id_str}/rgb/{id_image_str}.png"  #config["image_path"]
 

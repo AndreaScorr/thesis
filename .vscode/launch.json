@@ -8,9 +8,9 @@
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/andrea/Desktop/Thesis_project/FeatureMatching/correspondences.py",
+            "program": "/home/andrea/Desktop/Thesis_project/FeatureMatching/correspondences_zs6d.py",
             "console": "integratedTerminal",
-            "args": ["--config", "obj_config/6_tuna_fish_can.yaml"]
+            "args": ["--config", "obj_config//6_tuna_fish_can.yaml"]
 
         }
     ]

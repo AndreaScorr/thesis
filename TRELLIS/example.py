@@ -13,7 +13,7 @@ import random
 pipeline = TrellisImageTo3DPipeline.from_pretrained("JeffreyXiang/TRELLIS-image-large")
 pipeline.cuda()
 
-input_path =  "/home/andrea/Desktop/Thesis_project/Segmented/rgb/000053/000052_000013.png"
+input_path =  "/home/andrea/Desktop/Thesis_project/Segmented/rgb/000048/002070_000006.png"
 # Load an image
 image = Image.open(input_path)
 output_path = "/home/andrea/Desktop/Thesis_project/Models/TRELLIS/"
