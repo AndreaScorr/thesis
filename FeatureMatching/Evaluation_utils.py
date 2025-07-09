@@ -292,16 +292,16 @@ def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R
     ##save the data clastered by scene##
     os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/claster_by_scenes/{str(int(folder)).zfill(6)}", exist_ok=True)
     json_clastered_path = f"/home/andrea/Desktop/Thesis_project/evaluation/claster_by_scenes/{str(int(folder)).zfill(6)}/{str(int(obj_id))}.json"
-    #with open(json_path, "a") as f:
-    #    f.write(json.dumps(result, separators=(',', ':')) + "\n")
+    with open(json_clastered_path, "a") as f:
+        f.write(json.dumps(result, separators=(',', ':')) + "\n")
     
 
     ##save the data clastered by object id##
     os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/{str(int(obj_id))}", exist_ok=True)
     json_path = f"/home/andrea/Desktop/Thesis_project/evaluation/{str(int(obj_id))}/results_{str(int(folder)).zfill(6)}.jsonl"
     # Scrivi in append, una riga = un oggetto JSON compatto
-    #with open(json_path, "a") as f:
-    #    f.write(json.dumps(result, separators=(',', ':')) + "\n")
+    with open(json_path, "a") as f:
+        f.write(json.dumps(result, separators=(',', ':')) + "\n")
 
     #csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.csv"
     csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/andrea_ycbv-test.csv"
@@ -317,14 +317,14 @@ def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R
                        gt_T=t_gt,
                        t=t_pred)
     os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/csv", exist_ok=True)
-    '''save_pose_result(csv_path=csv_path,
+    save_pose_result(csv_path=csv_path,
                      scene_id=folder,
                      im_id=id_image,
                      obj_id=obj_id,
                      time_taken=-1,
                      score=score,
                      R=R_pred,
-                     t=t_pred)'''
+                     t=t_pred)
     
     return Add, Add_S
 

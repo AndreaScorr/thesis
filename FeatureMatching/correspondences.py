@@ -389,7 +389,7 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             #print("image1_pil prima crop:",image1_pil.size)
         
             
-            img_crop, y_offset, x_offset = img_utils.make_quadratic_crop(np.array(image1_pil), bbox)
+            img_crop, y_offset, x_offset = img_utils.make_quadratic_crop(np.array(image1_pil_show), bbox)
 
             #print("imgcrop",img_crop.shape)
             
@@ -620,7 +620,16 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             #object_points_3D = object_points_3D -np.mean(object_points_3D, axis=0)
 
             try:
-                retval, rvec, tvec, inliers = cv2.solvePnPRansac(object_points_3D, image_points_2D, cam_K,distCoeffs=dist_coeffs, iterationsCount=500, reprojectionError=2.0)
+                retval, rvec, tvec, inliers = cv2.solvePnPRansac(object_points_3D, image_points_2D, cam_K,distCoeffs=dist_coeffs, iterationsCount=1000, reprojectionError=3.0)
+                if retval:
+                    rvec, tvec = cv2.solvePnPRefineLM(
+                        object_points_3D[inliers[:, 0]],
+                        image_points_2D[inliers[:, 0]],
+                        cam_K,
+                        dist_coeffs,
+                        rvec,
+                        tvec
+                        )
             except:
                 continue
             #print("tvec shape",tvec.shape)
@@ -817,7 +826,7 @@ if __name__ == "__main__":
         best_template_id = [89]
         template_id =17
         # Load JSON file
-        id_folder=50
+        id_folder=48
         folder_str = str(int(id_folder)).zfill(6)
         json_path= f"/home/andrea/Desktop/test_set/ycbv_test_bop19/ycbv/test/{folder_str}/scene_gt.json"
         with open(json_path, 'r') as f:
@@ -826,7 +835,7 @@ if __name__ == "__main__":
         print(ids)
         check_ids =[83, 1027, 1059, 1087, 1568, 1576, 2051] #49 obj 6 [1172, 2061]# 48 [1128,1122, 1137]
 #        for id_image in range(1,2):
-        for id_image in   ids[-10:]: #check_ids:#
+        for id_image in   ids[:10]: #check_ids:#
 
             #for template_id in best_template_id:
             #id_image=8

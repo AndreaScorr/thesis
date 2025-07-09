@@ -93,44 +93,72 @@ def make_quadratic_crop(image, bbox):
         crop = image[crop_y:crop_y+crop_size, crop_x:crop_x+crop_size]
     
     return crop, crop_y, crop_x
-'''
-def make_quadratic_crop(image, bbox):
-    import numpy as np
-    import cv2
 
-    # Dimensione del crop
-    crop_size = 224
 
-    # Bounding box
-    x_left, y_top, width, height = bbox
-    center_x = x_left + width / 2
-    center_y = y_top + height / 2
+def _transform_to_xyz(r, g, b, x_ct, y_ct, z_ct, x_scale, y_scale, z_scale):
+    x = r / 255.
+    x = x * 2 - 1
+    x = x * x_scale + x_ct
+    y = g / 255.
+    y = y * 2 - 1
+    y = y * y_scale + y_ct
+    z = b / 255.
+    z = z * 2 - 1
+    z = z * z_scale + z_ct
+    
+    return x, y, z
 
-    # Coordinate del crop centrato
-    crop_x = int(center_x - crop_size / 2)
-    crop_y = int(center_y - crop_size / 2)
+def transform_2D_3D(points, img_uv, norm_factor):
+    x_ct = norm_factor["x_ct"]
+    y_ct = norm_factor["y_ct"]
+    z_ct = norm_factor["z_ct"]
+    x_scale = norm_factor["x_scale"]
+    y_scale = norm_factor["y_scale"]
+    z_scale = norm_factor["z_scale"]
+    
+    points_3D = []
+    
+    for point in points:
+        r, g, b = img_uv[point[0],point[1]]
+        x, y, z = _transform_to_xyz(r, g, b, x_ct, y_ct, z_ct, x_scale, y_scale, z_scale)
+        points_3D.append([x,y,z])
+    
+    return points_3D
+def get_pose_from_correspondences(points1, points2, y_offset, x_offset, img_uv, cam_K, norm_factor, scale_factor, resize_factor=1.0):
+    
+    # filter valid points
+    valid_points1 = []
+    valid_points2 = []
+    for point1, point2 in zip(points1, points2):
+        if np.any(img_uv[point2[0], point2[1]] != [0,0,0]):
+            valid_points1.append(point1)
+            valid_points2.append(point2)
+    
+    # Check if enough correspondences for PnPRansac
+    if len(valid_points1) < 4:
+        return None, None
+    
+    points2_3D = transform_2D_3D(valid_points2, img_uv, norm_factor)
 
-    image = np.array(image)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    valid_points1 = np.array(valid_points1).astype(np.float64)/resize_factor
 
-    # Calcola i margini se il crop esce dall'immagine
-    top = max(0, -crop_y)
-    bottom = max(0, crop_y + crop_size - image.shape[0])
-    left = max(0, -crop_x)
-    right = max(0, crop_x + crop_size - image.shape[1])
+    valid_points1[:,0] += y_offset
+    valid_points1[:,1] += x_offset
 
-    # Aggiungi bordo se necessario
-    if top > 0 or bottom > 0 or left > 0 or right > 0:
-        image = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_REPLICATE)
+    valid_points1[:,[0,1]] = valid_points1[:,[1,0]]
 
-    # Aggiorna le coordinate del crop se c'è stato padding
-    crop_y += top
-    crop_x += left
+    try:
+        retval, rvec, tvec, inliers = cv2.solvePnPRansac(np.array(points2_3D).astype(np.float64), valid_points1, cam_K,
+                                                        distCoeffs=None, iterationsCount=100, reprojectionError=8.0)
+    
+    except:
+        print("Solving PnP failed!")
+        return None, None
+    
+    R_est, _ = cv2.Rodrigues(rvec)
+    t_est = np.squeeze(tvec)*scale_factor
 
-    crop = image[crop_y:crop_y+crop_size, crop_x:crop_x+crop_size]
-
-    return crop, crop_y, crop_x
-'''
+    return R_est, t_est
 
 def chunk_cosine_sim(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     """ Computes cosine similarity between all possible pairs in two sets of vectors.
@@ -316,11 +344,11 @@ def draw_projected_3d_bbox(image, obj_id, rvec, tvec, camera_matrix, dist_coeffs
         cv2.line(image, pt1, pt2, color=(0, 255, 0), thickness=2)
 
     # Mostra il risultato
-    plt.figure(figsize=(10, 8))
-    plt.imshow(image)
-    plt.title(f"3D Bounding Box Projection - Object {obj_id}")
-    plt.axis("off")
-    plt.show()
+    #plt.figure(figsize=(10, 8))
+    #plt.imshow(image)
+    #plt.title(f"3D Bounding Box Projection - Object {obj_id}")
+    #plt.axis("off")
+    #plt.show()
 
 def draw_projected_3d_bbox_gt(folder_id,image_id,image, obj_id, rvec, tvec, rvec_gt, tvec_gt, camera_matrix, dist_coeffs, models_info_path):
     
@@ -498,14 +526,14 @@ def draw_projected_3d_bbox_gt(folder_id,image_id,image, obj_id, rvec, tvec, rvec
     # Percorso completo del file da salvare
     output_path = os.path.join(output_dir, f"output_image_{image_id}_obj{obj_id}.png")
     # Mostra il risultato
-    plt.figure(figsize=(10, 8))
+    '''plt.figure(figsize=(10, 8))
     plt.imshow(image)
     plt.title(f"Image {image_id} 3D Bounding Box Projection - Object {obj_id}")
     #plt.savefig(output_path, bbox_inches='tight')
 
     plt.axis("off")
-    plt.show()
-    '''plt.show(block=False)     # Mostra senza bloccare l'esecuzione
+    #plt.show()
+    plt.show(block=False)     # Mostra senza bloccare l'esecuzione
     plt.pause(4)              # Attende 3 secondi
     plt.close()     '''          # Chiude la finestra del plot
 
