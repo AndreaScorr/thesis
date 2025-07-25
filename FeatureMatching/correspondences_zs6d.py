@@ -21,7 +21,7 @@ import Evaluation_utils as Eval
 import findBest_template as fbt
 from scipy.spatial.transform import Rotation as R
 
-path_thesis_data = "/home/andrea/Documents/thesis_material/Pitcher/trellis"
+path_thesis_data = "/home/andrea/Documents/thesis_material/Mug/gt"
 
 
 
@@ -478,9 +478,9 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         buffer= "/home/andrea/Desktop/Thesis_project/FeatureMatching/buffer/crop.png"
         cv2.imwrite(buffer,img_crop)
         try:
-            #best_template=fbt.find_Best_template_patchwise(input_image_path=buffer,template_dir=f"/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/obj_{str(obj_id)}") #gt models
+            best_template=fbt.find_Best_template_patchwise(input_image_path=buffer,template_dir=f"/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/obj_{str(obj_id)}") #gt models
         
-            best_template=fbt.find_Best_template_patchwise(input_image_path=buffer,template_dir=f"/home/andrea/Desktop/template_rendering/templates_trellis_3/mesh_desc/obj_{str(obj_id)}") #trellis models
+            #best_template=fbt.find_Best_template_patchwise(input_image_path=buffer,template_dir=f"/home/andrea/Desktop/template_rendering/templates_trellis_3/mesh_desc/obj_{str(obj_id)}") #trellis models
         except:
             result = {
             "id_image": id_image,
@@ -529,8 +529,8 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         
         image_path1="temp/img_crop.png"
         cv2.imwrite(image_path1,img_crop)
-        #image_path2=f"/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/obj_{str(obj_id)}/{best_template}" #gt_models
-        image_path2=f"/home/andrea/Desktop/template_rendering/templates_trellis_3/mesh_desc/obj_{str(obj_id)}/{best_template}" #trellis models
+        image_path2=f"/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/obj_{str(obj_id)}/{best_template}" #gt_models
+        #image_path2=f"/home/andrea/Desktop/template_rendering/templates_trellis_3/mesh_desc/obj_{str(obj_id)}/{best_template}" #trellis models
         
         print("image_path2:",image_path2)
         img_uv_path =image_path2.removesuffix(".png")
@@ -619,8 +619,8 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         cam_K = np.array([[fx,         0,      cx],
                         [0.0,        fy,     cy],
                         [0.0,       0.0,    1.0]])
-        #resize_factor_path = "/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/models_xyz/norm_factor.json" #gt_norm
-        resize_factor_path = "/home/andrea/Desktop/template_rendering/templates_trellis_3/mesh_desc/models_xyz/norm_factor.json"
+        resize_factor_path = "/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/models_xyz/norm_factor.json" #gt_norm
+        #resize_factor_path = "/home/andrea/Desktop/template_rendering/templates_trellis_3/mesh_desc/models_xyz/norm_factor.json"
 
 
         with open(resize_factor_path, 'r') as f:
@@ -638,7 +638,7 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
             #R_correction = R.from_euler('xy', [-90, 180], degrees=True).as_matrix()
 
             # R_pred è la rotazione stimata dalla rete o da PnP
-            R_est = R_est @ R_correction #gt
+            #R_est = R_est @ R_correction #gt
             print("R_est",R_est)
             print("t_est",t_est)
         except:
@@ -775,7 +775,7 @@ if __name__ == "__main__":
                 #if obj_id in 
         
         print(folders_to_fetch)
-        folders_to_fetch = [52]    
+        folders_to_fetch = [48]    
         for id_folder in folders_to_fetch:
             folder_str = str(int(id_folder)).zfill(6)
             json_path= f"/home/andrea/Desktop/test_set/ycbv_test_bop19/ycbv/test/{folder_str}/scene_gt.json"
@@ -785,7 +785,7 @@ if __name__ == "__main__":
             print(ids)
             #57 GOOD PITCHER gt
             #2066 
-            check_ids =[121] #49 obj 6 [1172, 2061]# 48 [1128,1122, 1137]
+            check_ids =[1087] #49 obj 6 [1172, 2061]# 48 [1128,1122, 1137]
             for id_image in check_ids:#ids[:1]: #c
 
                 #for template_id in best_template_id:

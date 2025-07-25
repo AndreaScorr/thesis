@@ -24,7 +24,7 @@ from math import acos, degrees
 from scipy.spatial.distance import cdist
 from scipy.spatial import cKDTree
 
-path_thesis_data = "/home/andrea/Documents/thesis_material/Pitcher/trellis"
+path_thesis_data = "/home/andrea/Documents/thesis_material/Mug/gt"
 
 
 def find_nearest_non_black_white(img, x, y, max_search_radius=10):
@@ -114,7 +114,7 @@ def transform_2D_3D(points, img_uv, norm_factor):
     x_ct = norm_factor["x_ct"]
     y_ct = norm_factor["y_ct"]
     z_ct = norm_factor["z_ct"]
-    f=2 #2 #for trellis
+    f=1 #2 #for trellis
     x_scale = norm_factor["x_scale"]*f
     y_scale = norm_factor["y_scale"]*f
     z_scale = norm_factor["z_scale"]*f
@@ -568,8 +568,8 @@ def draw_projected_3d_bbox_gt(folder_id,image_id,image, obj_id, rvec, tvec, rvec
     #plt.savefig(output_path, bbox_inches='tight')
     plt.axis("off")
 
-    output_path="/home/andrea/Documents/thesis_material/Pitcher/gt/estimation"
-    #plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
+    output_path="/home/andrea/Documents/thesis_material/Mug/gt/estimation.pdf"
+    plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
 
     plt.show()
     '''
