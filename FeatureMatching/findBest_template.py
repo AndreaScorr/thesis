@@ -178,11 +178,12 @@ def load_all_template_embeddings(template_dir):
     image_paths = []
 
     for fname in tqdm(sorted(os.listdir(template_dir)), desc="Caricamento template"):
-        if fname.lower().endswith((".png", ".jpg", ".jpeg")):
+        if fname.lower().endswith((".png", ".jpg", ".jpeg")) and not fname.endswith("_uv.png"):
             img_path = os.path.join(template_dir, fname)
             feats = extract_patch_features(img_path)
             template_embeddings.append(feats)
             image_paths.append(img_path)
+
 
     return template_embeddings, image_paths
 def compute_sift_score(query_path, template_path):

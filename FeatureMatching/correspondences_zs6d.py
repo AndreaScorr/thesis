@@ -19,6 +19,11 @@ import ImageUtils as img_utils
 import json_utils as js
 import Evaluation_utils as Eval
 import findBest_template as fbt
+from scipy.spatial.transform import Rotation as R
+
+path_thesis_data = "/home/andrea/Documents/thesis_material/Pitcher/trellis"
+
+
 
 def load_config(config_path):
     with open(config_path, 'r') as f:
@@ -167,7 +172,8 @@ def draw_correspondences(points1: List[Tuple[float, float]], points2: List[Tuple
     #ax2.axis('off')
     ax1.imshow(image1)
     ax2.imshow(image2)
-
+    ax1.axis('off')
+    ax2.axis('off')
     # Sposta le finestre (valori in pixel: x, y)
     fig1.canvas.manager.window.wm_geometry("+100+100")   # Prima figura in alto a sinistra
     fig2.canvas.manager.window.wm_geometry("+800+100")   # Seconda figura più a destra
@@ -178,7 +184,7 @@ def draw_correspondences(points1: List[Tuple[float, float]], points2: List[Tuple
         cmap = ListedColormap(["red", "yellow", "blue", "lime", "magenta", "indigo", "orange", "cyan", "darkgreen",
                                "maroon", "black", "white", "chocolate", "gray", "blueviolet"])
     colors = np.array([cmap(x) for x in range(num_points)])
-    radius1, radius2 = 8, 1
+    radius1, radius2 = 8, 1 #3,0.5
     for point1, point2, color in zip(points1, points2, colors):
         y1, x1 = point1
         circ1_1 = plt.Circle((x1, y1), radius1, facecolor=color, edgecolor='white', alpha=0.5)
@@ -190,8 +196,55 @@ def draw_correspondences(points1: List[Tuple[float, float]], points2: List[Tuple
         circ2_2 = plt.Circle((x2, y2), radius2, facecolor=color, edgecolor='white')
         ax2.add_patch(circ2_1)
         ax2.add_patch(circ2_2)
+
+    fig1.savefig(path_thesis_data+"/image1.png", bbox_inches='tight', pad_inches=0)
+    fig2.savefig(path_thesis_data+"/image2.png", bbox_inches='tight', pad_inches=0)
     return fig1, fig2
 
+def draw_correspondences_combined(points1: List[Tuple[float, float]], points2: List[Tuple[float, float]],
+                                   image1: Image.Image, image2: Image.Image) -> plt.Figure:
+    """
+    Draw point correspondences on a single figure with two subplots (side by side).
+    :param points1: a list of (y, x) coordinates on image1.
+    :param points2: a list of (y, x) coordinates on image2.
+    :param image1: a PIL image.
+    :param image2: a PIL image.
+    :return: a single matplotlib figure with two subplots.
+    """
+    assert len(points1) == len(points2), f"points lengths are incompatible: {len(points1)} != {len(points2)}"
+    num_points = len(points1)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    ax1.imshow(image1)
+    ax2.imshow(image2)
+    ax1.axis('off')
+    ax2.axis('off')
+
+    if num_points > 15:
+        cmap = plt.get_cmap('tab10')
+    else:
+        cmap = ListedColormap([
+            "red", "yellow", "blue", "lime", "magenta", "indigo", "orange",
+            "cyan", "darkgreen", "maroon", "black", "white", "chocolate",
+            "gray", "blueviolet"
+        ])
+    colors = np.array([cmap(x) for x in range(num_points)])
+    radius1, radius2 = 8, 1
+
+    for pt1, pt2, color in zip(points1, points2, colors):
+        y1, x1 = pt1
+        y2, x2 = pt2
+        circ1_1 = plt.Circle((x1, y1), radius1, facecolor=color, edgecolor='white', alpha=0.5)
+        circ1_2 = plt.Circle((x1, y1), radius2, facecolor=color, edgecolor='white')
+        circ2_1 = plt.Circle((x2, y2), radius1, facecolor=color, edgecolor='white', alpha=0.5)
+        circ2_2 = plt.Circle((x2, y2), radius2, facecolor=color, edgecolor='white')
+        ax1.add_patch(circ1_1)
+        ax1.add_patch(circ1_2)
+        ax2.add_patch(circ2_1)
+        ax2.add_patch(circ2_2)
+
+    plt.tight_layout()
+    return fig
 def segmentation(image_pil ,text_prompt):
     """
     :param str image_path
@@ -263,15 +316,28 @@ def segmentation_from_file(id_folder,id_image,obj_id):
     if mask_np is None:
         raise FileNotFoundError(f"Immagine non trovata nel percorso: {path}")
     
-    # Mostra l'immagine
-    #plt.imshow(mask_np, cmap='gray')
-    #plt.title(f"Mask: {id_str}_{obj_str}.png")
-    #plt.axis('off')
-    #plt.show()
+    filename = f"mask_{id_str}_{obj_str}.png"
+    save_path = os.path.join(path_thesis_data, filename)
+    plt.figure()
+    plt.imshow(mask_np, cmap='gray')
+    plt.title(f"Mask: {id_str}_{obj_str}.png")
+    plt.axis('off')
+    plt.tight_layout(pad=0)
+    plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
+    plt.close()
+    '''# Mostra l'immagine
+    plt.imshow(mask_np, cmap='gray')
+    plt.title(f"Mask: {id_str}_{obj_str}.png")
+    plt.axis('off')
+    plt.show()
     
+    filename = f"mask_{id_str}_{obj_str}.png"
+    save_path = os.path.join(path_thesis_data, filename)
+    plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
+    plt.close()
     #plt.show(block=False)
     #plt.pause(3)
-    #plt.close() 
+    #plt.close() '''
     return mask_np
 
 def get_bounding_box_from_mask(mask):
@@ -411,7 +477,23 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         img_crop = cv2.bitwise_and(img_crop, img_crop, mask=mask_crop)
         buffer= "/home/andrea/Desktop/Thesis_project/FeatureMatching/buffer/crop.png"
         cv2.imwrite(buffer,img_crop)
-        best_template=fbt.find_Best_template_patchwise(input_image_path=buffer,template_dir=f"/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/obj_{str(obj_id)}")
+        try:
+            #best_template=fbt.find_Best_template_patchwise(input_image_path=buffer,template_dir=f"/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/obj_{str(obj_id)}") #gt models
+        
+            best_template=fbt.find_Best_template_patchwise(input_image_path=buffer,template_dir=f"/home/andrea/Desktop/template_rendering/templates_trellis_3/mesh_desc/obj_{str(obj_id)}") #trellis models
+        except:
+            result = {
+            "id_image": id_image,
+            "data": {
+                "GT_R": None,
+                "GT_T": None,
+                "ADD": 0,
+                "ADD_S": 0
+                }
+            }
+            return result
+        #best_template="000001.png"
+        #/home/andrea/Desktop/template_rendering/templates_trellis_2/mesh_desc/test/obj_8
         best_template_id=int(best_template.removesuffix(".png"))
         #qui andrà la modifica, si cercherà nel template di philip
         #caricare l'immagine corrispondente uv
@@ -426,6 +508,20 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         plt.axis("off")
         plt.imshow(img_crop)
         plt.show()'''
+        img_inverted = 255 - img_crop
+
+        # Salva l'immagine
+        filename = f"crop_{id_str}_{obj_str}.png"
+        save_path = os.path.join(path_thesis_data, filename)
+
+                # Converti da BGR a RGB
+        crop_rgb = cv2.cvtColor(img_crop, cv2.COLOR_BGR2RGB)
+
+                # Converti a PIL
+        crop_pil = Image.fromarray(crop_rgb)
+
+        # Salva immagine
+        crop_pil.save(save_path)
         #plt.show(block=False)
         #plt.pause(1)
         #plt.close()
@@ -433,7 +529,9 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         
         image_path1="temp/img_crop.png"
         cv2.imwrite(image_path1,img_crop)
-        image_path2=f"/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/obj_{str(obj_id)}/{best_template}"
+        #image_path2=f"/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/obj_{str(obj_id)}/{best_template}" #gt_models
+        image_path2=f"/home/andrea/Desktop/template_rendering/templates_trellis_3/mesh_desc/obj_{str(obj_id)}/{best_template}" #trellis models
+        
         print("image_path2:",image_path2)
         img_uv_path =image_path2.removesuffix(".png")
         img_uv_path = img_uv_path+"_uv.npy"
@@ -497,7 +595,7 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         #print("points1:",points1)
         
         #print("points2:",points2)
-        #draw_correspondences(points1,points2,image1_pil,image2_pil)
+        draw_correspondences(points1,points2,image1_pil,image2_pil)
         #plt.show()
         '''plt.show(block=False)
         plt.pause(1)
@@ -521,7 +619,9 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         cam_K = np.array([[fx,         0,      cx],
                         [0.0,        fy,     cy],
                         [0.0,       0.0,    1.0]])
-        resize_factor_path = "/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/models_xyz/norm_factor.json"
+        #resize_factor_path = "/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/models_xyz/norm_factor.json" #gt_norm
+        resize_factor_path = "/home/andrea/Desktop/template_rendering/templates_trellis_3/mesh_desc/models_xyz/norm_factor.json"
+
 
         with open(resize_factor_path, 'r') as f:
             norm_factors = json.load(f)
@@ -532,6 +632,13 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
                                                                    norm_factors[str(obj_id)], 
                                                                    scale_factor=1.0, 
                                                                    resize_factor=1.0)
+            
+            # Rotazione inversa: -90° attorno all’asse X
+            R_correction = R.from_euler('x', -90, degrees=True).as_matrix()
+            #R_correction = R.from_euler('xy', [-90, 180], degrees=True).as_matrix()
+
+            # R_pred è la rotazione stimata dalla rete o da PnP
+            R_est = R_est @ R_correction #gt
             print("R_est",R_est)
             print("t_est",t_est)
         except:
@@ -584,16 +691,28 @@ def Estimate_Pose_from_correspondences(id_folder,id_image, file_type, template_i
         points_eval =np.array(img_utils.transform_2D_3D(points2,img_uv, norm_factors[str(obj_id)]))
         best_d= Eval.compute_model_diameter(model_points=points_eval,obj_id=obj_id,models_info_path="/home/andrea/Desktop/Thesis_project/Models/models_info.json")
 
-        Add,AddS = Eval.compute_add_and_addS(folder=id_folder,
-                                        id_image=image_id,
-                                        obj_id=obj_id,
-                                        pts3d=points_eval,
-                                        diameter=best_d,
-                                        R_gt=gt_R,
-                                        t_gt=gt_T,
-                                        R_pred=R_est,
-                                        t_pred=t_est,
-                                        best_template_id=best_template_id)
+        try:
+            Add,AddS = Eval.compute_add_and_addS(folder=id_folder,
+                                            id_image=image_id,
+                                            obj_id=obj_id,
+                                            pts3d=points_eval,
+                                            diameter=best_d,
+                                            R_gt=gt_R,
+                                            t_gt=gt_T,
+                                            R_pred=R_est,
+                                            t_pred=t_est,
+                                            best_template_id=best_template_id)
+        except:
+            result = {
+            "id_image": id_image,
+            "data": {
+                "GT_R": None,
+                "GT_T": None,
+                "ADD": 0,
+                "ADD_S": 0
+                }
+            }
+            return result
         print("ADD:",Add)
         #print("% 1  diameter:",(d*0.01))
         #print("theta:", theta)
@@ -656,7 +775,7 @@ if __name__ == "__main__":
                 #if obj_id in 
         
         print(folders_to_fetch)
-            
+        folders_to_fetch = [52]    
         for id_folder in folders_to_fetch:
             folder_str = str(int(id_folder)).zfill(6)
             json_path= f"/home/andrea/Desktop/test_set/ycbv_test_bop19/ycbv/test/{folder_str}/scene_gt.json"
@@ -664,12 +783,13 @@ if __name__ == "__main__":
                 data = json.load(f)
             ids = list(map(int, data.keys()))
             print(ids)
-            
-            #check_ids =[83, 1027, 1059, 1087, 1568, 1576, 2051] #49 obj 6 [1172, 2061]# 48 [1128,1122, 1137]
-            for id_image in ids: #check_ids:#
+            #57 GOOD PITCHER gt
+            #2066 
+            check_ids =[121] #49 obj 6 [1172, 2061]# 48 [1128,1122, 1137]
+            for id_image in check_ids:#ids[:1]: #c
 
                 #for template_id in best_template_id:
-                #id_image=8
+                #id_image=8MasterChef
                     #try:
                 #print("templateooo",template_id)
 

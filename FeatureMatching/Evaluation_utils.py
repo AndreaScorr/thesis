@@ -289,42 +289,62 @@ def compute_add_and_addS(folder, id_image,obj_id, pts3d, diameter, R_gt, t_gt, R
     obj_id_folder = str(int(obj_id)).zfill(6)
     score= calc_score(pts3d, diameter, R_gt, t_gt, R_pred, t_pred, decay=0.05)
     
-    ##save the data clastered by scene##
-    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/claster_by_scenes/{str(int(folder)).zfill(6)}", exist_ok=True)
-    json_clastered_path = f"/home/andrea/Desktop/Thesis_project/evaluation/claster_by_scenes/{str(int(folder)).zfill(6)}/{str(int(obj_id))}.json"
-    with open(json_clastered_path, "a") as f:
-        f.write(json.dumps(result, separators=(',', ':')) + "\n")
+    ##save the data clastered by scene## GT
+    '''os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/claster_by_scenes/{str(int(folder)).zfill(6)}", exist_ok=True)
+    json_clastered_path = f"/home/andrea/Desktop/Thesis_project/evaluation/claster_by_scenes/{str(int(folder)).zfill(6)}/{str(int(obj_id))}.json"'''
+
+    ##save the data clastered by scene## TRELLIS MODEL
+    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation_TRELLIS/claster_by_scenes/{str(int(folder)).zfill(6)}", exist_ok=True)
+    json_clastered_path = f"/home/andrea/Desktop/Thesis_project/evaluation_TRELLIS/claster_by_scenes/{str(int(folder)).zfill(6)}/{str(int(obj_id))}.jsonl"
+    #with open(json_clastered_path, "a") as f:
+    #    f.write(json.dumps(result, separators=(',', ':')) + "\n")
     
 
-    ##save the data clastered by object id##
-    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/{str(int(obj_id))}", exist_ok=True)
-    json_path = f"/home/andrea/Desktop/Thesis_project/evaluation/{str(int(obj_id))}/results_{str(int(folder)).zfill(6)}.jsonl"
+    ##save the data clastered by object id## GT
+    '''os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/{str(int(obj_id))}", exist_ok=True)
+    json_path = f"/home/andrea/Desktop/Thesis_project/evaluation/{str(int(obj_id))}/results_{str(int(folder)).zfill(6)}.jsonl"'''
+
+    ##save the data clastered by object id## TRELLIS MODEL
+    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation_TRELLIS/{str(int(obj_id))}", exist_ok=True)
+    json_path = f"/home/andrea/Desktop/Thesis_project/evaluation_TRELLIS/{str(int(obj_id))}/results_{str(int(folder)).zfill(6)}.jsonl"
     # Scrivi in append, una riga = un oggetto JSON compatto
-    with open(json_path, "a") as f:
-        f.write(json.dumps(result, separators=(',', ':')) + "\n")
+    #with open(json_path, "a") as f:
+    #    f.write(json.dumps(result, separators=(',', ':')) + "\n")
 
     #csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{obj_id_folder}/results_{str(int(folder)).zfill(6)}.csv"
-    csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/andrea_ycbv-test.csv"
-        
-    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{str(int(obj_id))}", exist_ok=True)
-    csv_offset = f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{str(int(obj_id))}/offsets_{str(int(folder)).zfill(6)}.csv"
-    save_offset_result(csv_path=csv_offset,
+    
+    ## save csv int this path ## GT 
+    '''csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation/csv/andrea_ycbv-test.csv"'''
+
+    ## save csv ## TRELLIS 
+    csv_path= f"/home/andrea/Desktop/Thesis_project/evaluation_TRELLIS/csv/andrea_ycbv-test.csv"
+
+    ## GT offset ##
+    '''os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{str(int(obj_id))}", exist_ok=True)
+    csv_offset = f"/home/andrea/Desktop/Thesis_project/evaluation/csv/{str(int(obj_id))}/offsets_{str(int(folder)).zfill(6)}.csv"'''
+
+    ## TRELLIS OFFSET ##
+    os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation_TRELLIS/csv/{str(int(obj_id))}", exist_ok=True)
+    csv_offset = f"/home/andrea/Desktop/Thesis_project/evaluation_TRELLIS/csv/{str(int(obj_id))}/offsets_{str(int(folder)).zfill(6)}.csv"
+    '''save_offset_result(csv_path=csv_offset,
                        scene_id=folder,
                        im_id=id_image,
                        obj_id=obj_id,
                        gt_R=R_gt,
                        R=R_pred,
                        gt_T=t_gt,
-                       t=t_pred)
+                       t=t_pred)'''
+    
+
     os.makedirs(f"/home/andrea/Desktop/Thesis_project/evaluation/csv", exist_ok=True)
-    save_pose_result(csv_path=csv_path,
+    '''save_pose_result(csv_path=csv_path,
                      scene_id=folder,
                      im_id=id_image,
                      obj_id=obj_id,
                      time_taken=-1,
                      score=score,
                      R=R_pred,
-                     t=t_pred)
+                     t=t_pred)'''
     
     return Add, Add_S
 
@@ -409,6 +429,7 @@ def plot_ap_curve_single_class(file_path, mode="rotation"):
 
     thresholds, ap_values = compute_ap_curve(results, mode=mode)
 
+
     plt.figure(figsize=(8, 5))
     plt.plot(thresholds, ap_values, label=class_name)
     plt.xlabel("Rotation error (°)" if mode == "rotation" else "Translation error (cm)")
@@ -438,7 +459,7 @@ def compute_add_percentage(results):
     return add_percentage,add_s_percentage
 
 
-def plot_all_jsonl_curves(folder_path, mode="rotation"):
+'''def plot_all_jsonl_curves(folder_path, mode="rotation"):
     """
     Plotta un unico grafico con le curve AP di tutti i file JSONL nella cartella.
     """
@@ -461,5 +482,64 @@ def plot_all_jsonl_curves(folder_path, mode="rotation"):
     out_name = f"combined_{mode}_ap_curves.png"
     out_path = os.path.join(folder_path, out_name)
     #plt.savefig(out_path)
+    print(f"Grafico salvato in: {out_path}")
+    plt.show()''' 
+
+oggetti = {
+    1: "master_chef_can",
+    2: "cracker_box",
+    3: "sugar_box",
+    4: "tomato_soup_can",
+    5: "mustard_bottle",
+    6: "tuna_fish_can",
+    7: "pudding_box",
+    8: "gelatin_box",
+    9: "potted_meat_can",
+    10: "banana",
+    11: "pitcher_base",
+    12: "bleach_cleanser",
+    13: "bowl",
+    14: "mug",
+    15: "power_drill",
+    16: "wood_block",
+    17: "scissor",
+    18: "large_marker",
+    19: "large_clamp",
+    20: "extra_large_clamp",
+    21: "foam_brick"
+    }
+def plot_all_jsonl_curves(folder_path, mode="rotation"):
+    """
+    Plotta un unico grafico con le curve AP di tutti i file JSONL nella cartella,
+    usando i nomi degli oggetti per la legenda.
+    """
+    plt.figure(figsize=(10, 6))
+    jsonl_files = sorted(f for f in os.listdir(folder_path) if f.endswith(".jsonl"))
+
+    for fname in jsonl_files:
+        file_path = os.path.join(folder_path, fname)
+        results = load_jsonl(file_path)
+        if(mode=="rotation"):
+            thresholds, ap_values = compute_ap_curve(results, mode=mode,max_threshold=180)
+        if(mode=="translation"):
+            thresholds, ap_values = compute_ap_curve(results, mode=mode,max_threshold=80)
+        # Estrai l'indice dal nome file (es. "1.jsonl" → 1)
+        try:
+            idx = int(fname.replace(".jsonl", ""))
+            label = oggetti.get(idx, f"Object {idx}")
+        except ValueError:
+            label = fname.replace(".jsonl", "")
+        
+        plt.plot(thresholds, ap_values, label=label)
+
+    plt.xlabel("Rotation error (°)" if mode == "rotation" else "Translation error (cm)")
+    plt.ylabel("Accuracy of Prediction (%)")
+    plt.title(f"Combined {mode.capitalize()} AP Curves")
+    plt.grid(True)
+    plt.legend(title="Object")
+    plt.tight_layout()
+    out_name = f"combined_{mode}_ap_curves.png"
+    out_path = os.path.join(folder_path, out_name)
+    # plt.savefig(out_path)
     print(f"Grafico salvato in: {out_path}")
     plt.show()

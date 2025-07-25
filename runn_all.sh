@@ -1,17 +1,24 @@
 set -e
 
+python FeatureMatching/correspondences_zs6d.py --config obj_config/1_master_chef_cam.yaml
 
-#python FeatureMatching/correspondences_zs6d.py --config obj_config/5_mustard_bottle.yaml
+python FeatureMatching/correspondences_zs6d.py --config obj_config/2_cracker_box.yaml
 
-#python FeatureMatching/correspondences_zs6d.py --config obj_config/6_tuna_fish_can.yaml 
+python FeatureMatching/correspondences_zs6d.py --config obj_config/3_sugar_box.yaml
 
-#python FeatureMatching/correspondences_zs6d.py --config obj_config/7_pudding_box.yaml
+python FeatureMatching/correspondences_zs6d.py --config obj_config/4_tomato_soup_can.yaml
 
-#python FeatureMatching/correspondences_zs6d.py --config obj_config/8_gelatin_box.yaml
+python FeatureMatching/correspondences_zs6d.py --config obj_config/5_mustard_bottle.yaml
 
-#python FeatureMatching/correspondences_zs6d.py --config obj_config/9_potted_meat_can.yaml
+python FeatureMatching/correspondences_zs6d.py --config obj_config/6_tuna_fish_can.yaml 
 
-#python FeatureMatching/correspondences_zs6d.py --config obj_config/10_banana.yaml
+python FeatureMatching/correspondences_zs6d.py --config obj_config/7_pudding_box.yaml
+
+python FeatureMatching/correspondences_zs6d.py --config obj_config/8_gelatin_box.yaml
+
+python FeatureMatching/correspondences_zs6d.py --config obj_config/9_potted_meat_can.yaml
+
+python FeatureMatching/correspondences_zs6d.py --config obj_config/10_banana.yaml
 
 python FeatureMatching/correspondences_zs6d.py --config obj_config/11_pitcher_base.yaml
 

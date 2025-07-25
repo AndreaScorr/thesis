@@ -24,6 +24,8 @@ from math import acos, degrees
 from scipy.spatial.distance import cdist
 from scipy.spatial import cKDTree
 
+path_thesis_data = "/home/andrea/Documents/thesis_material/Pitcher/trellis"
+
 
 def find_nearest_non_black_white(img, x, y, max_search_radius=10):
     """
@@ -112,9 +114,11 @@ def transform_2D_3D(points, img_uv, norm_factor):
     x_ct = norm_factor["x_ct"]
     y_ct = norm_factor["y_ct"]
     z_ct = norm_factor["z_ct"]
-    x_scale = norm_factor["x_scale"]
-    y_scale = norm_factor["y_scale"]
-    z_scale = norm_factor["z_scale"]
+    f=2 #2 #for trellis
+    x_scale = norm_factor["x_scale"]*f
+    y_scale = norm_factor["y_scale"]*f
+    z_scale = norm_factor["z_scale"]*f
+    
     
     points_3D = []
     
@@ -124,8 +128,40 @@ def transform_2D_3D(points, img_uv, norm_factor):
         points_3D.append([x,y,z])
     
     return points_3D
+
+
+
+def save_imge_uv(uv_data):
+    # Normalizzazione per immagine 8-bit
+    if np.issubdtype(uv_data.dtype, np.floating):
+        if uv_data.max() <= 1.0:
+            img_data = (uv_data * 255).astype(np.uint8)
+        else:
+            img_data = (255 * (uv_data - uv_data.min()) / (uv_data.max() - uv_data.min())).astype(np.uint8)
+    else:
+        img_data = uv_data.astype(np.uint8)
+
+    # Gestione dei canali
+    if img_data.ndim == 3 and img_data.shape[2] == 2:
+        img_data = np.dstack([img_data, np.zeros_like(img_data[:, :, 0])])
+    elif img_data.ndim == 2:
+        img_data = np.stack([img_data]*3, axis=-1)
+
+    # Crea cartella se non esiste
+    os.makedirs(path_thesis_data, exist_ok=True)
+    filename="Nocs.pdf"
+    # Salva immagine con matplotlib
+     
+    save_path = os.path.join(path_thesis_data, filename)
+    plt.imsave(save_path, img_data)
+    print(f"Saved UV image to: {save_path}")
+
+
 def get_pose_from_correspondences(points1, points2, y_offset, x_offset, img_uv, cam_K, norm_factor, scale_factor, resize_factor=1.0):
     
+
+    save_imge_uv(img_uv)
+
     # filter valid points
     valid_points1 = []
     valid_points2 = []
@@ -526,16 +562,21 @@ def draw_projected_3d_bbox_gt(folder_id,image_id,image, obj_id, rvec, tvec, rvec
     # Percorso completo del file da salvare
     output_path = os.path.join(output_dir, f"output_image_{image_id}_obj{obj_id}.png")
     # Mostra il risultato
-    '''plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(10, 8))
     plt.imshow(image)
     plt.title(f"Image {image_id} 3D Bounding Box Projection - Object {obj_id}")
     #plt.savefig(output_path, bbox_inches='tight')
-
     plt.axis("off")
-    #plt.show()
+
+    output_path="/home/andrea/Documents/thesis_material/Pitcher/gt/estimation"
+    #plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
+
+    plt.show()
+    '''
     plt.show(block=False)     # Mostra senza bloccare l'esecuzione
     plt.pause(4)              # Attende 3 secondi
-    plt.close()     '''          # Chiude la finestra del plot
+    plt.close()         '''      # Chiude la finestra del plot
+
 
 
 def input_resize(image, target_size, intrinsics):
