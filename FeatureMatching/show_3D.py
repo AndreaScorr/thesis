@@ -1,6 +1,8 @@
 import numpy as np
 import open3d as o3d
 import json
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # serve per abilitare il 3D in matplotlib
 
 def load_nocs_from_npy(npy_path):
     nocs = np.load(npy_path)
@@ -38,6 +40,28 @@ def visualize_pointcloud(points, highlight_points=None):
 
     o3d.visualization.draw_geometries(geometries)
 
+    
+def plot_with_matplotlib(points):
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Scatter plot dei punti
+    ax.scatter(points[:, 0], points[:, 1], points[:, 2], c='b', s=1)
+
+    # Imposta etichette assi
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    # Imposta limiti automatici (o fissi se vuoi)
+    ax.auto_scale_xyz(points[:, 0], points[:, 1], points[:, 2])
+
+    # Griglia
+    ax.grid(True)
+
+    plt.title("Visualizzazione 3D con matplotlib")
+    plt.show()
+
 def main():
     # ✅ CONFIGURAZIONE
     npy_path = "/home/andrea/Desktop/ZS6/ZS6D/templates/ycbv_desc/obj_14/000098_uv.npy"
@@ -55,6 +79,8 @@ def main():
 
     # 👁️ Visualizza
     visualize_pointcloud(mesh_points)
+    plot_with_matplotlib(mesh_points)
+
 
 if __name__ == "__main__":
     main()
